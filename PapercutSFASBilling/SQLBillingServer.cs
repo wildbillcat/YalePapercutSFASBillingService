@@ -67,65 +67,86 @@ namespace PapercutSFASBilling
                 if (!WhiteList && !BlackList) //No BlackList or WhiteList, use MasterList
                 {
                     run = true;
-                    queryList = "SELECT " + this.sqlPrefix + "temp_MasterList.NetID" +
-                                "FROM " + this.sqlPrefix + "temp_MasterList";
+                    queryList = "SELECT " + this.sqlPrefix + "temp_MainList.NetID" +
+                                "FROM " + this.sqlPrefix + "temp_MainList";
                 }
-                else if(!WhiteList && BlackList)//No WhiteList, MasterList outer join BlackList where null
+                else if(!WhiteList && BlackList)//No WhiteList, MasterList inner join BlackList where null
                 {
                     run = true;
-                    queryList = "SELECT " + this.sqlPrefix + "temp_MasterList.NetID" +
-                                " FROM " + this.sqlPrefix + "temp_BlackList RIGHT JOIN " + this.sqlPrefix + "temp_MasterList ON " + this.sqlPrefix + "temp_BlackList.NetID = " + this.sqlPrefix + "temp_MasterList.NetID" +
+                    queryList = "SELECT " + this.sqlPrefix + "temp_MainList.NetID" +
+                                " FROM " + this.sqlPrefix + "temp_BlackList RIGHT JOIN " + this.sqlPrefix + "temp_MainList ON " + this.sqlPrefix + "temp_BlackList.NetID = " + this.sqlPrefix + "temp_MainList.NetID" +
                                 " WHERE (((" + this.sqlPrefix + "temp_BlackList.NetID) Is Null))";
                 }else if (WhiteList && !BlackList) //No BlackList, Join MasterList & WhiteList
                 {
                     run = true;
-                    queryList = "SELECT " + this.sqlPrefix + "temp_MasterList.NetID" +
-                                "FROM " + this.sqlPrefix + "temp_MasterList INNER JOIN " + this.sqlPrefix + "temp_WhiteList ON " + this.sqlPrefix + "temp_MasterList.NetID = " + this.sqlPrefix + "temp_WhiteList.NetID";
-                }else if (WhiteList && BlackList) //Join MasterList & WhiteList outer join BlackList  select where null
+                    queryList = "SELECT " + this.sqlPrefix + "temp_MainList.NetID" +
+                                "FROM " + this.sqlPrefix + "temp_MainList INNER JOIN " + this.sqlPrefix + "temp_WhiteList ON " + this.sqlPrefix + "temp_MainList.NetID = " + this.sqlPrefix + "temp_WhiteList.NetID";
+                }else if (WhiteList && BlackList) //Join MasterList & WhiteList inner join BlackList  select where null
                 {
                     run = true;
-                    queryList = "SELECT temp_MasterList.NetID" +
-                                " FROM temp_BlackList RIGHT JOIN (temp_WhiteList INNER JOIN temp_MasterList ON temp_WhiteList.NetID = temp_MasterList.NetID) ON temp_BlackList.NetID = temp_MasterList.NetID" +
+                    queryList = "SELECT temp_MainList.NetID" +
+                                " FROM temp_BlackList RIGHT JOIN (temp_WhiteList INNER JOIN temp_MainList ON temp_WhiteList.NetID = temp_MainList.NetID) ON temp_BlackList.NetID = temp_MainList.NetID" +
                                 " WHERE (((temp_BlackList.NetID) Is Null))";
                 }
                 if (run)
                 {
-                    SqlConnection conn = new SqlConnection("Server=" + sqlPath + "; Database=" + sqlDatabase + "; User ID=" + sqlUser + "; Password=" + sqlPass + ";");
-                    SqlCommand BillableUsersQuery = new SqlCommand(queryList, conn);
-                    List<string> BillableUsers = new List<string>();
-                    SqlDataReader results = BillableUsersQuery.ExecuteReader();
-                    while (results.Read())
+                    using (SqlConnection conn = new SqlConnection("Server=" + sqlPath + "; Database=" + sqlDatabase + "; User ID=" + sqlUser + "; Password=" + sqlPass + ";"))
                     {
-                        BillableUsers.Add(results.GetString(0));
+                        List<string> BillableUsers = new List<string>();
+                        conn.Open();
+                        using (SqlCommand BillableUsersQuery = new SqlCommand(queryList, conn))
+                        {
+                            
+                            using (SqlDataReader results = BillableUsersQuery.ExecuteReader())
+                            {
+                                while (results.Read())
+                                {
+                                    BillableUsers.Add(results.GetString(0));
+                                }
+                            }
+                        }
+                        
+            
+                        //Redundant?**********************************************************************************************************************
+                       
+                        List<PapercutUser> BalanceList = paperCutServer.RetrievePapercutBalances(BillableUsers);
+                        this.billableUsers = BalanceList.Distinct<PapercutUser>().ToList<PapercutUser>();
+                            /*
+                        SqlCommand command = new SqlCommand("INSERT INTO temp_BillingList (NetID, Balance) VALUES(@NetID, @Balance)", conn);
+                        foreach (PapercutUser userO in BalanceList)
+                        {
+                            command.Parameters.AddWithValue("@NetID", userO.NetID);
+                            command.Parameters.AddWithValue("@Balance", userO.balance);
+                            command.ExecuteNonQuery();
+                            command.Dispose();
+                        }
+                             * */
                     }
-
-                    List<PapercutUser> BalanceList = paperCutServer.RetrievePapercutBalances(BillableUsers);
-                    
-                    foreach (PapercutUser userO in BalanceList)
-                    {
-                        SqlCommand command = new SqlCommand("INSERT INTO temp_BillingList(NetID, Balance) VALUES(" + userO.NetID + ", " + userO.balance + ")", conn);
-                        command.ExecuteNonQuery();
-                        command.Dispose();
-                    }
-                    conn.Close();
                     return true;
                 }
             return false;
         }
 
+        /*
+         * Redundant Method
         public void GetPapercutBillableUsers()
         {
-            SqlConnection conn = new SqlConnection("Server=" + sqlPath + "; Database=" + sqlDatabase + "; User ID=" + sqlUser + "; Password=" + sqlPass + ";");
-            conn.Open();
-            SqlCommand BillableUsersQuery = new SqlCommand("SELECT " + this.sqlPrefix + "temp_BillingList.NetID, " + this.sqlPrefix + "temp_BillingList.Balance FROM " + this.sqlPrefix + "temp_BillingList WHERE ((Not (" + this.sqlPrefix + "temp_BillingList.Balance)=0))", conn);
-            billableUsers = new List<PapercutUser>();
-            SqlDataReader results = BillableUsersQuery.ExecuteReader();
-            while (results.Read())
+            using (SqlConnection conn = new SqlConnection("Server=" + sqlPath + "; Database=" + sqlDatabase + "; User ID=" + sqlUser + "; Password=" + sqlPass + ";"))
+            {
+                conn.Open();
+                SqlCommand BillableUsersQuery = new SqlCommand("SELECT " + this.sqlPrefix + "temp_BillingList.NetID, " + this.sqlPrefix + "temp_BillingList.Balance FROM " + this.sqlPrefix + "temp_BillingList WHERE ((Not (" + this.sqlPrefix + "temp_BillingList.Balance)=0))", conn);
+                billableUsers = new List<PapercutUser>();
+                using (SqlDataReader results = BillableUsersQuery.ExecuteReader())
                 {
-                    billableUsers.Add(new PapercutUser(results.GetString(0), -1*results.GetDouble(1))); //Inverts the Negative Balance to be positive, so that PaperCut account will be credited and SIS will be billed
+                    while (results.Read())
+                    {
+                        billableUsers.Add(new PapercutUser(results.GetString(0), -1 * results.GetDouble(1))); //Inverts the Negative Balance to be positive, so that PaperCut account will be credited and SIS will be billed
+                    }
                 }
-            conn.Close();
+                conn.Close();
+            }
         }
+         * */
 
         public bool GenerateBilling(PaperCutServer Papercut, OracleServer Oracle)
         {
@@ -135,207 +156,219 @@ namespace PapercutSFASBilling
             List<TransactionError> errorLog = new List<TransactionError>();
             //List of all successful transactions that are processed.
             List<BillingTransaction> transactionLedger = new List<BillingTransaction>();
-            SqlConnection conn = new SqlConnection("Server=" + sqlPath + "; Database=" + sqlDatabase + "; User ID=" + sqlUser + "; Password=" + sqlPass + ";");
-            conn.Open();
-            string termCode = Oracle.GetCurrentTermCode();
-            //Formatted Term Code for File
-            char[] cTermCode = termCode.ToCharArray();
-            //Formatted Activity Date for File
-            char[] cActivityDate = DateTime.Now.ToString("MMddyyyy").ToCharArray();
-            //Formatted Detail Code for File
-            char[] cBatchDetailCode = BillingUtility.ValidDetailCode(batchDetailCode);
-            //Formatted User ID for File
-            char[] cBatchUserID = BillingUtility.ValidBatchUserID(batchUserID);
-            
-            //Total Cost of Billing
-            double totalBilling = 0.00; //Absolute Value
-            double batchTotalBalance = 0.00; //Overall Value
-            /**************************************************************************************************************************************************
-             * This Section of the Method Generates the Transaction information and Validates Billable Users. 
-            **************************************************************************************************************************************************/
-            
-            foreach(PapercutUser user in billableUsers) // For each User:
+            using (SqlConnection conn = new SqlConnection("Server=" + sqlPath + "; Database=" + sqlDatabase + "; User ID=" + sqlUser + "; Password=" + sqlPass + ";"))
             {
-                string[] oracleInfo = Oracle.GetUserInfo(user.NetID, termCode);
-                if (oracleInfo.Length == 4)//If it is has 4 values then oracle information was retrieved. Validate User:
+                conn.Open();
+                string termCode = Oracle.GetCurrentTermCode();
+                //Formatted Term Code for File
+                char[] cTermCode = termCode.ToCharArray();
+                //Formatted Activity Date for File
+                char[] cActivityDate = DateTime.Now.ToString("MMddyyyy").ToCharArray();
+                //Formatted Detail Code for File
+                char[] cBatchDetailCode = BillingUtility.ValidDetailCode(batchDetailCode);
+                //Formatted User ID for File
+                char[] cBatchUserID = BillingUtility.ValidBatchUserID(batchUserID);
+
+                //Total Cost of Billing
+                double totalBilling = 0.00; //Absolute Value
+                double batchTotalBalance = 0.00; //Overall Value
+                /**************************************************************************************************************************************************
+                 * This Section of the Method Generates the Transaction information and Validates Billable Users. 
+                **************************************************************************************************************************************************/
+
+                foreach (PapercutUser user in billableUsers) // For each User:
                 {
-                    if (BillingUtility.ValidStatus(oracleInfo[2]))//If it is true then the user can be billed.
+                    string[] oracleInfo = Oracle.GetUserInfo(user.NetID, termCode);
+                    if (oracleInfo.Length == 4)//If it is has 4 values then oracle information was retrieved. Validate User:
                     {
-                        try
+                        if (BillingUtility.ValidStatus(oracleInfo[2]))//If it is true then the user can be billed.
                         {
-                            //Where the system could have been set to use multiple transactions, it seems prudent that if a student has accrued charges in excess of 9,999,999.99 that someone should look into it, as an error is more likely.
-                            if (Math.Abs(user.balance) > 9999999.99)
+                            try
                             {
-                                throw new ValidationException(string.Concat("User: ", user.NetID, " has too large of balance to be billed. ($", user.balance, ")"));
+                                //Where the system could have been set to use multiple transactions, it seems prudent that if a student has accrued charges in excess of 9,999,999.99 that someone should look into it, as an error is more likely.
+                                if (Math.Abs(user.balance) > 9999999.99)
+                                {
+                                    throw new ValidationException(string.Concat("User: ", user.NetID, " has too large of balance to be billed. ($", user.balance, ")"));
+                                }
+
+                                if (totalBilling + Math.Abs(user.balance) > 9999999.99)
+                                {
+                                    // total billing would exceed with this user, break loop and submit billing.
+                                    break;
+                                }
+
+                                char[] amount = BillingUtility.FormatAmount(user.balance);
+                                double billingAmount = double.Parse(amount.ToString()) / 100; //This ensures that the numerical value and billed value match (Eliminating possibility of fractions of Cents.
+                                char[] creditIndicator;
+                                if (user.balance < 0)//set Credit indicator
+                                {
+                                    creditIndicator = new char[] { 'C', 'R' };
+                                }
+                                else
+                                {
+                                    creditIndicator = new char[] { ' ', ' ' };
+                                }
+                                char[] userPID = BillingUtility.ValidPID(oracleInfo[0]);
+                                char[] userSPRIDENID = BillingUtility.ValidSPRIDEN_ID(oracleInfo[1]);
+                                transactionLedger.Add(new BillingTransaction(amount, billingAmount, creditIndicator, user.NetID, userPID, userSPRIDENID));
+                                totalBilling = totalBilling + Math.Abs(billingAmount);//Absolute Sum
+                                batchTotalBalance = batchTotalBalance + billingAmount;//Value Sum
                             }
-
-                            if(totalBilling + Math.Abs(user.balance) > 9999999.99)
+                            catch (Exception e) //An exception was thrown on the 
                             {
-                                // total billing would exceed with this user, break loop and submit billing.
-                                break;
-                            }
-
-                            char[] amount = BillingUtility.FormatAmount(user.balance);
-                            double billingAmount = double.Parse(amount.ToString()) / 100; //This ensures that the numerical value and billed value match (Eliminating possibility of fractions of Cents.
-                            char[] creditIndicator;
-                            if (user.balance < 0)//set Credit indicator
-                            {
-                                creditIndicator = new char[] { 'C', 'R' };
-                            }
-                            else
-                            {
-                                creditIndicator = new char[] { ' ', ' ' };
-                            }
-                            char[] userPID = BillingUtility.ValidPID(oracleInfo[0]);
-                            char[] userSPRIDENID = BillingUtility.ValidSPRIDEN_ID(oracleInfo[1]);
-                            transactionLedger.Add(new BillingTransaction(amount, billingAmount, creditIndicator, user.NetID, userPID, userSPRIDENID));
-                            totalBilling = totalBilling + Math.Abs(billingAmount);//Absolute Sum
-                            batchTotalBalance = batchTotalBalance + billingAmount;//Value Sum
-                        }
-                        catch (Exception e) //An exception was thrown on the 
-                        {
-                            //write error to error list.
-                            errorLog.Add(new TransactionError(user.NetID, e.Message));
-                        }
-                    } else
-                    {
-                        //User is not Billable, Status is invalid.
-                        errorLog.Add(new TransactionError(user.NetID, string.Concat("User is not Billable due to invalid status. Status: ", oracleInfo[2], " : ", oracleInfo[3])));
-                    }
-                }else{
-                    //User does not exist in oracle, can not bill!
-                    errorLog.Add(new TransactionError(user.NetID, string.Concat("User does not exit in Oracle in Term: ", termCode)));
-                }
-                billableUsers.Remove(user); //Done processing the user, either billed or not billable.
-            }
-
-            /**************************************************************************************************************************************************
-             * Temporary Transaction File Generation Section of Method 
-            **************************************************************************************************************************************************/
-
-            if (transactionLedger.Count() > 0) //Determines if there are any billable users. If so Generate billing, bill their PaperCut Accounts and Write the Transaction.
-            {
-                try{
-                    //Generate New Billing ID
-                    char[] cTotalBilling = BillingUtility.FormatAmount(totalBilling);
-                    int billingID = this.GenerateNewBillingID(cTotalBilling, batchTotalBalance);
-                    char[] BillingID = BillingUtility.FormatBatchNumber(billingID);
-                    string billingTransactionSQL = string.Concat("Insert into ", this.sqlPrefix, "BillingTransactions (ActivityDate, Balance, BatchID, DetailCode, NetID, PIDM, SPRIDEN_ID, Amount, CreditIndicator, TermCode, BatchUserID) values(@ActivityDate, @Balance, @BatchID, @DetailCode, @NetID, @PIDM, @SPRIDEN_ID, @Amount, @CreditIndicator, @TermCode, @BatchUserID)");
-                    SqlCommand billingTransactionQuery = new SqlCommand(billingTransactionSQL, conn);
-
-                    double finTotalBilling = 0.00;//Absolute Sum
-                    double finBatchTotalBalance = 0.00;//Value Sum
-
-                    //Open file and Write Header Record
-                    using (System.IO.StreamWriter file = new System.IO.StreamWriter(string.Concat(@"BillingSubmissions\", BillingID, "_transactions.txt")))
-                    {
-                        //Now Write all detail records
-                        foreach (BillingTransaction transaction in transactionLedger)
-                        {
-                            //If statement to credit PaperCut server, else don't bill, throw error.
-                            if (Papercut.AdjustUserBalance(transaction.NetID, transaction.balance, string.Concat("Billing ID: ", BillingID, ". ", cActivityDate)))
-                            {
-
-                                billingTransactionQuery.Parameters.AddWithValue("@Balance", transaction.balance); //Just used to Track Billing in DB
-                                billingTransactionQuery.Parameters.AddWithValue("@NetID", transaction.NetID); //Just used to Track Billing in DB
-
-                                file.Write(cBatchUserID);
-                                billingTransactionQuery.Parameters.AddWithValue("@BatchUserID", cBatchUserID);
-
-
-                                file.Write(BillingID);
-                                billingTransactionQuery.Parameters.AddWithValue("@BatchID", BillingID);
-
-                                file.Write('1'); //File only, denotes that this is a transaction entry instead of a header entry
-
-                                file.Write(transaction.PIDM);
-                                billingTransactionQuery.Parameters.AddWithValue("@PIDM", transaction.PIDM);
-
-                                file.Write(transaction.SPRIDEN_ID);
-                                billingTransactionQuery.Parameters.AddWithValue("@SPRIDEN_ID", transaction.SPRIDEN_ID);
-
-                                file.Write(cBatchDetailCode);
-                                billingTransactionQuery.Parameters.AddWithValue("@DetailCode", cBatchDetailCode);
-
-                                file.Write(cActivityDate);
-                                billingTransactionQuery.Parameters.AddWithValue("@ActivityDate", cActivityDate);
-
-                                file.Write(transaction.Amount);
-                                billingTransactionQuery.Parameters.AddWithValue("@Amount", transaction.Amount);
-
-                                file.Write(transaction.CreditIndicator);
-                                billingTransactionQuery.Parameters.AddWithValue("@CreditIndicator", transaction.CreditIndicator);
-
-                                file.Write(termCode);
-                                billingTransactionQuery.Parameters.AddWithValue("@TermCode", termCode);
-
-
-                                //File Specific Formatting
-                                file.WriteLine("                                       ");
-
-                                billingTransactionQuery.ExecuteNonQuery();//Submit Written Transaction to Database
-
-                                finTotalBilling = finTotalBilling + Math.Abs(transaction.balance);//Absolute Sum
-                                finBatchTotalBalance = finBatchTotalBalance + transaction.balance;//Value Sum
-                            }
-                            else
-                            {
-                                //An error occurred trying to bill their PaperCut Account! 
-                                errorLog.Add(new TransactionError(transaction.NetID, "Error attempting to adjust User's PapercutAccount"));
+                                //write error to error list.
+                                errorLog.Add(new TransactionError(user.NetID, e.Message));
                             }
                         }
-                        file.Flush();
-                    }//Complete writing out transactions
-
-                    char[] finalAbsBilling = BillingUtility.FormatAmount(finTotalBilling);
-                    this.UpdateBillingID(billingID, 0, finalAbsBilling, finBatchTotalBalance);
-                    //Update Billing Entry with corrected information
-            /**************************************************************************************************************************************************
-             * Final Billing File Generation Section of Method 
-            **************************************************************************************************************************************************/
-                    //Create Billing File
-                    using (System.IO.StreamWriter file = new System.IO.StreamWriter(string.Concat(@"BillingSubmissions\", BillingID, ".txt")))
-                    {
-                        file.Write(cBatchUserID);
-                        file.Write(BillingID);
-                        file.Write('0');
-                        file.Write(finalAbsBilling);
-                        file.WriteLine(cActivityDate);
-                        //Header Record complete
-
-                        //Now Open Temporary file and append it to the final Billing Submission
-                        using (System.IO.StreamReader temp = new System.IO.StreamReader(string.Concat(@"BillingSubmissions\", BillingID, "_transactions.txt")))
+                        else
                         {
-                            while (!temp.EndOfStream)
-                            {
-                                file.WriteLine(temp.ReadLine());
-                            }
+                            //User is not Billable, Status is invalid.
+                            errorLog.Add(new TransactionError(user.NetID, string.Concat("User is not Billable due to invalid status. Status: ", oracleInfo[2], " : ", oracleInfo[3])));
                         }
                     }
-                    //Billing File Created, Delete temporary file
-                    System.IO.File.Delete(string.Concat(@"BillingSubmissions\", BillingID, "_transactions.txt"));
-                //BillingUtility;
-                }catch(Exception e){
-                    //Something went Wrong with generation of Billing
-                    errorLog.Add(new TransactionError("System Error: ", e.Message));
+                    else
+                    {
+                        //User does not exist in oracle, can not bill!
+                        errorLog.Add(new TransactionError(user.NetID, string.Concat("User does not exit in Oracle in Term: ", termCode)));
+                    }
+                    billableUsers.Remove(user); //Done processing the user, either billed or not billable.
                 }
-                
-                
-            }
 
-            /**************************************************************************************************************************************************
-             * Final Billing File Generation Completed. Generating Error File Before Return 
-            **************************************************************************************************************************************************/
+                /**************************************************************************************************************************************************
+                 * Temporary Transaction File Generation Section of Method 
+                **************************************************************************************************************************************************/
 
-            //Now Write out Errors:
-            using (System.IO.StreamWriter file = new System.IO.StreamWriter(string.Concat(@"BillingErrors\", cActivityDate, "_Errors.txt"), true))
-            {
-                foreach(TransactionError error in errorLog)
+                if (transactionLedger.Count() > 0) //Determines if there are any billable users. If so Generate billing, bill their PaperCut Accounts and Write the Transaction.
                 {
-                    file.WriteLine(string.Concat(error.Username, " : ", error.Error));
+                    try
+                    {
+                        //Generate New Billing ID
+                        char[] cTotalBilling = BillingUtility.FormatAmount(totalBilling);
+                        int billingID = this.GenerateNewBillingID(cTotalBilling, batchTotalBalance);
+                        char[] BillingID = BillingUtility.FormatBatchNumber(billingID);
+                        string billingTransactionSQL = string.Concat("Insert into ", this.sqlPrefix, "BillingTransactions (ActivityDate, Balance, BatchID, DetailCode, NetID, PIDM, SPRIDEN_ID, Amount, CreditIndicator, TermCode, BatchUserID) values(@ActivityDate, @Balance, @BatchID, @DetailCode, @NetID, @PIDM, @SPRIDEN_ID, @Amount, @CreditIndicator, @TermCode, @BatchUserID)");
+                        SqlCommand billingTransactionQuery = new SqlCommand(billingTransactionSQL, conn);
+
+                        double finTotalBilling = 0.00;//Absolute Sum
+                        double finBatchTotalBalance = 0.00;//Value Sum
+
+                        //Open file and Write Header Record
+                        using (System.IO.StreamWriter file = new System.IO.StreamWriter(string.Concat(@"BillingSubmissions\", BillingID, "_transactions.txt")))
+                        {
+                            //Now Write all detail records
+                            foreach (BillingTransaction transaction in transactionLedger)
+                            {
+                                //If statement to credit PaperCut server, else don't bill, throw error.
+                                if (Papercut.AdjustUserBalance(transaction.NetID, transaction.balance, string.Concat("Billing ID: ", BillingID, ". ", cActivityDate)))
+                                {
+
+                                    billingTransactionQuery.Parameters.AddWithValue("@Balance", transaction.balance); //Just used to Track Billing in DB
+                                    billingTransactionQuery.Parameters.AddWithValue("@NetID", transaction.NetID); //Just used to Track Billing in DB
+
+                                    file.Write(cBatchUserID);
+                                    billingTransactionQuery.Parameters.AddWithValue("@BatchUserID", cBatchUserID);
+
+
+                                    file.Write(BillingID);
+                                    billingTransactionQuery.Parameters.AddWithValue("@BatchID", BillingID);
+
+                                    file.Write('1'); //File only, denotes that this is a transaction entry instead of a header entry
+
+                                    file.Write(transaction.PIDM);
+                                    billingTransactionQuery.Parameters.AddWithValue("@PIDM", transaction.PIDM);
+
+                                    file.Write(transaction.SPRIDEN_ID);
+                                    billingTransactionQuery.Parameters.AddWithValue("@SPRIDEN_ID", transaction.SPRIDEN_ID);
+
+                                    file.Write(cBatchDetailCode);
+                                    billingTransactionQuery.Parameters.AddWithValue("@DetailCode", cBatchDetailCode);
+
+                                    file.Write(cActivityDate);
+                                    billingTransactionQuery.Parameters.AddWithValue("@ActivityDate", cActivityDate);
+
+                                    file.Write(transaction.Amount);
+                                    billingTransactionQuery.Parameters.AddWithValue("@Amount", transaction.Amount);
+
+                                    file.Write(transaction.CreditIndicator);
+                                    billingTransactionQuery.Parameters.AddWithValue("@CreditIndicator", transaction.CreditIndicator);
+
+                                    file.Write(termCode);
+                                    billingTransactionQuery.Parameters.AddWithValue("@TermCode", termCode);
+
+
+                                    //File Specific Formatting
+                                    file.WriteLine("                                       ");
+
+                                    billingTransactionQuery.ExecuteNonQuery();//Submit Written Transaction to Database
+
+                                    finTotalBilling = finTotalBilling + Math.Abs(transaction.balance);//Absolute Sum
+                                    finBatchTotalBalance = finBatchTotalBalance + transaction.balance;//Value Sum
+                                }
+                                else
+                                {
+                                    //An error occurred trying to bill their PaperCut Account! 
+                                    errorLog.Add(new TransactionError(transaction.NetID, "Error attempting to adjust User's PapercutAccount"));
+                                }
+                            }
+                            file.Flush();
+                        }//Complete writing out transactions
+
+                        char[] finalAbsBilling = BillingUtility.FormatAmount(finTotalBilling);
+                        this.UpdateBillingID(billingID, 0, finalAbsBilling, finBatchTotalBalance);
+                        //Update Billing Entry with corrected information
+                        /**************************************************************************************************************************************************
+                         * Final Billing File Generation Section of Method 
+                        **************************************************************************************************************************************************/
+                        //Create Billing File
+                        using (System.IO.StreamWriter file = new System.IO.StreamWriter(string.Concat(@"BillingSubmissions\", BillingID, ".txt")))
+                        {
+                            file.Write(cBatchUserID);
+                            file.Write(BillingID);
+                            file.Write('0');
+                            file.Write(finalAbsBilling);
+                            file.WriteLine(cActivityDate);
+                            //Header Record complete
+
+                            //Now Open Temporary file and append it to the final Billing Submission
+                            using (System.IO.StreamReader temp = new System.IO.StreamReader(string.Concat(@"BillingSubmissions\", BillingID, "_transactions.txt")))
+                            {
+                                while (!temp.EndOfStream)
+                                {
+                                    file.WriteLine(temp.ReadLine());
+                                }
+                            }
+                        }
+
+                        //Add billing to list of Completed Billings
+                        billingsCompleted.Add(BillingID.ToString());
+
+                        //Billing File Created, Delete temporary file
+                        System.IO.File.Delete(string.Concat(@"BillingSubmissions\", BillingID, "_transactions.txt"));
+                        //BillingUtility;
+                    }
+                    catch (Exception e)
+                    {
+                        //Something went Wrong with generation of Billing
+                        errorLog.Add(new TransactionError("System Error: ", e.Message));
+                    }
+
+
                 }
-            }
-            conn.Close();
+
+                /**************************************************************************************************************************************************
+                 * Final Billing File Generation Completed. Generating Error File Before Return 
+                **************************************************************************************************************************************************/
+
+                //Now Write out Errors:
+                using (System.IO.StreamWriter file = new System.IO.StreamWriter(string.Concat(@"BillingErrors\", cActivityDate, "_Errors.txt"), true))
+                {
+                    foreach (TransactionError error in errorLog)
+                    {
+                        file.WriteLine(string.Concat(error.Username, " : ", error.Error));
+                    }
+                }
+                conn.Close();
+            }//End Using
             return BillingIncomplete;
         }
         
@@ -378,18 +411,20 @@ namespace PapercutSFASBilling
                 
                 Console.WriteLine(query);
                 query = query.Substring(0, query.Length - 1);
-                SqlConnection conn = new SqlConnection("Server=" + sqlPath + "; Database=" + sqlDatabase + "; User ID=" + sqlUser + "; Password=" + sqlPass + ";");
-                conn.Open();
-                SqlCommand createTableQ = new SqlCommand(createTable, conn);
-                createTableQ.ExecuteNonQuery();
-                SqlCommand saveUsersQuery = new SqlCommand(query, conn);
-                int rows = saveUsersQuery.ExecuteNonQuery();
-                if (rows != UserList.Count()) //If number of rows not equal to number of users:
+                using (SqlConnection conn = new SqlConnection("Server=" + sqlPath + "; Database=" + sqlDatabase + "; User ID=" + sqlUser + "; Password=" + sqlPass + ";"))
                 {
+                    conn.Open();
+                    SqlCommand createTableQ = new SqlCommand(createTable, conn);
+                    createTableQ.ExecuteNonQuery();
+                    SqlCommand saveUsersQuery = new SqlCommand(query, conn);
+                    int rows = saveUsersQuery.ExecuteNonQuery();
+                    if (rows != UserList.Count()) //If number of rows not equal to number of users:
+                    {
+                        conn.Close();
+                        return false; //Submission Failed
+                    }
                     conn.Close();
-                    return false; //Submission Failed
                 }
-                conn.Close();
             }
             
             return true;
@@ -408,12 +443,14 @@ namespace PapercutSFASBilling
 
             //MS SQL Server
             string billingGen = string.Concat("Insert into ", this.sqlPrefix, "Billings (BatchStatus, BatchTotal, BatchTotalBalance) output inserted.id values(@BatchStatus, @BatchTotal, @BatchTotalBalance)");
-            SqlConnection conn = new SqlConnection("Server=" + sqlPath + "; Database=" + sqlDatabase + "; User ID=" + sqlUser + "; Password=" + sqlPass + ";");
-            conn.Open();
-            SqlCommand generateBilling = new SqlCommand(billingGen, conn);
-            generateBilling.ExecuteNonQuery();
-            ID = (int)generateBilling.ExecuteScalar();
-            conn.Close();
+            using (SqlConnection conn = new SqlConnection("Server=" + sqlPath + "; Database=" + sqlDatabase + "; User ID=" + sqlUser + "; Password=" + sqlPass + ";"))
+            {
+                conn.Open();
+                SqlCommand generateBilling = new SqlCommand(billingGen, conn);
+                generateBilling.ExecuteNonQuery();
+                ID = (int)generateBilling.ExecuteScalar();
+                conn.Close();
+            }
             return ID;
         }
 
@@ -422,14 +459,16 @@ namespace PapercutSFASBilling
             try
             {
                 string UpdateBilling = string.Concat("UPDATE ", this.sqlPrefix, "Billings set (BatchStatus = @BatchStatus, BatchTotal = @BatchTotal, BatchTotalBalance = @BatchTotalBalance) WHERE BatchID = @BatchID");
-                SqlConnection conn = new SqlConnection("Server=" + sqlPath + "; Database=" + sqlDatabase + "; User ID=" + sqlUser + "; Password=" + sqlPass + ";");
-                SqlCommand updateBilling = new SqlCommand(UpdateBilling, conn);
-                updateBilling.Parameters.AddWithValue("@BatchStatus", batchStatus);
-                updateBilling.Parameters.AddWithValue("@BatchTotal", batchTotal);
-                updateBilling.Parameters.AddWithValue("@BatchTotalBalance", batchTotalBalance);
-                updateBilling.Parameters.AddWithValue("@BatchID", batchID);
-                updateBilling.ExecuteNonQuery();
-                conn.Close();
+                using (SqlConnection conn = new SqlConnection("Server=" + sqlPath + "; Database=" + sqlDatabase + "; User ID=" + sqlUser + "; Password=" + sqlPass + ";"))
+                {
+                    SqlCommand updateBilling = new SqlCommand(UpdateBilling, conn);
+                    updateBilling.Parameters.AddWithValue("@BatchStatus", batchStatus);
+                    updateBilling.Parameters.AddWithValue("@BatchTotal", batchTotal);
+                    updateBilling.Parameters.AddWithValue("@BatchTotalBalance", batchTotalBalance);
+                    updateBilling.Parameters.AddWithValue("@BatchID", batchID);
+                    updateBilling.ExecuteNonQuery();
+                    conn.Close();
+                }
                 return true;
             }
             catch (Exception e)
@@ -442,53 +481,55 @@ namespace PapercutSFASBilling
 
         public bool ClearTemporaryTables()
         {
-            SqlConnection conn = new SqlConnection("Server=" + sqlPath + "; Database=" + sqlDatabase + "; User ID=" + sqlUser + "; Password=" + sqlPass + ";");
-            conn.Open();
-            string query = "DROP TABLE " + sqlPrefix + "temp_WhiteList";
-            SqlCommand dropTable = new SqlCommand(query, conn);
-            try
+            using (SqlConnection conn = new SqlConnection("Server=" + sqlPath + "; Database=" + sqlDatabase + "; User ID=" + sqlUser + "; Password=" + sqlPass + ";"))
             {
-                dropTable.ExecuteNonQuery();
-            }
-            catch (SqlException e)
-            {
-                Console.WriteLine(e.ErrorCode);
-                if (e.ErrorCode != -2146232060)
+                conn.Open();
+                string query = "DROP TABLE " + sqlPrefix + "temp_WhiteList";
+                SqlCommand dropTable = new SqlCommand(query, conn);
+                try
                 {
-                    throw e;
+                    dropTable.ExecuteNonQuery();
                 }
-            }
-            
-            query = "DROP TABLE " + sqlPrefix + "temp_BlackList";
-            dropTable = new SqlCommand(query, conn);
-            try
-            {
-                dropTable.ExecuteNonQuery();
-            }
-            catch (SqlException e)
-            {
-                Console.WriteLine(e.ErrorCode);
-                if (e.ErrorCode != -2146232060)
+                catch (SqlException e)
                 {
-                    throw e;
+                    Console.WriteLine(e.ErrorCode);
+                    if (e.ErrorCode != -2146232060)
+                    {
+                        throw e;
+                    }
                 }
-            }
-            
-            query = "DROP TABLE " + sqlPrefix + "temp_Mainlist";
-            dropTable = new SqlCommand(query, conn);
-            try
-            {
-                dropTable.ExecuteNonQuery();
-            }
-            catch (SqlException e)
-            {
-                Console.WriteLine(e.ErrorCode);
-                if (e.ErrorCode != -2146232060)
+
+                query = "DROP TABLE " + sqlPrefix + "temp_BlackList";
+                dropTable = new SqlCommand(query, conn);
+                try
                 {
-                   throw e;
+                    dropTable.ExecuteNonQuery();
                 }
+                catch (SqlException e)
+                {
+                    Console.WriteLine(e.ErrorCode);
+                    if (e.ErrorCode != -2146232060)
+                    {
+                        throw e;
+                    }
+                }
+
+                query = "DROP TABLE " + sqlPrefix + "temp_Mainlist";
+                dropTable = new SqlCommand(query, conn);
+                try
+                {
+                    dropTable.ExecuteNonQuery();
+                }
+                catch (SqlException e)
+                {
+                    Console.WriteLine(e.ErrorCode);
+                    if (e.ErrorCode != -2146232060)
+                    {
+                        throw e;
+                    }
+                }
+                conn.Close();
             }
-            
             return true;
         }
         

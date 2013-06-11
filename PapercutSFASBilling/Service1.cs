@@ -258,17 +258,21 @@ namespace PapercutSFASBilling
             }
 
             //Pull Blacklist and Whitelist of Users from AD
-            if (activeDirectoryServer.GetADuserLists(billingServer))
+            if (!activeDirectoryServer.GetADuserLists(billingServer))
             {
                 //Write Failure to Log
                 return;
             }
 
-            bool whiteListQ = 0 == activeDirectoryServer.GetWhiteListLength();
-            bool blackListQ = 0 == activeDirectoryServer.GetBlackListLength();
+            bool whiteListQ = 0 != activeDirectoryServer.GetWhiteListLength();
+            bool blackListQ = 0 != activeDirectoryServer.GetBlackListLength();
 
             billingServer.GenerateBillableUserList(whiteListQ, blackListQ, papercutServer);
-            billingServer.GetPapercutBillableUsers(); //Maybe just return number to bool?
+
+            //REDUNDANT METHOD
+            //billingServer.GetPapercutBillableUsers(); //Maybe just return number to bool? 
+
+
             if (!billingServer.PapercutUsersBillable()) //if there aren't billable users, return
             {
                 return;
