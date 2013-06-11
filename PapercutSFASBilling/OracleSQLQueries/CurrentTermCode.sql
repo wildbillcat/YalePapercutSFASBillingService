@@ -1,0 +1,1 @@
+select current_term_code from syvctrm_with_su;

@@ -1,0 +1,20 @@
+﻿PapercutPath = PaperCut Server URL
+PapercutAPIKey = PapercutAPI Key
+PapercutPort = 9191
+
+sqlBillingUser = SQL Server Username
+sqlBillingPassword = SQL User Password
+sqlBillingPath = QWL Server URL
+sqlBillingDatabase = PapercutBilling
+sqlBillingPrefix = dmofficeBilling_
+sqlBillingType = MSSQL
+
+oracleUser = Oracle User
+oraclePassword = Oracle Password
+oraclePath =  Oracle Path
+
+ActiveDirectoryWhiteList = Active Directory Group A, Active Directory Group B  
+ActiveDirectoryBlackList = Active Directory Group A, Active Directory Group B
+
+BatchUserID = S$USER
+BatchDetailCode = TEST
