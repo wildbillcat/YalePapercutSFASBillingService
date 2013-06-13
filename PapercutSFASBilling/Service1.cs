@@ -248,26 +248,26 @@ namespace PapercutSFASBilling
         protected void ProcessBilling()
         {
             LoadConfig(arguments); //Before Each billing Cycle, refresh configuration file and Items.
-            billingServer.ClearTemporaryTables();
+            //billingServer.ClearTemporaryTables(); This method should be unnecessary now that comparison workload is service side instead of sql side.
 
             //Pulls list of Papercut users from the database
-            if (!papercutServer.RetrievePapercutUsers(billingServer))
+            if (!papercutServer.RetrievePapercutUsers())
             {
                 //Write Failure to Log
                 return;
             }
 
             //Pull Blacklist and Whitelist of Users from AD
-            if (!activeDirectoryServer.GetADuserLists(billingServer))
+            if (!activeDirectoryServer.GetADuserLists())
             {
                 //Write Failure to Log
                 return;
             }
 
-            bool whiteListQ = 0 != activeDirectoryServer.GetWhiteListLength();
-            bool blackListQ = 0 != activeDirectoryServer.GetBlackListLength();
+            //bool whiteListQ = 0 != activeDirectoryServer.GetWhiteListLength();
+            //bool blackListQ = 0 != activeDirectoryServer.GetBlackListLength();
 
-            billingServer.GenerateBillableUserList(whiteListQ, blackListQ, papercutServer);
+            billingServer.GenerateBillableUserList(activeDirectoryServer, papercutServer);
 
             //REDUNDANT METHOD
             //billingServer.GetPapercutBillableUsers(); //Maybe just return number to bool? 

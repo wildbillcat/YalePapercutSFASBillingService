@@ -7,7 +7,7 @@ using System.DirectoryServices.AccountManagement;
 
 namespace PapercutSFASBilling
 {
-    class ActiveDirectoryServer
+     public class ActiveDirectoryServer
     {
         private string[] blackListedGroups;
         private string[] whiteListedGroups;
@@ -15,10 +15,23 @@ namespace PapercutSFASBilling
         private int WhiteListLength;
         private bool test;
 
+        private List<string> whiteList = new List<string>();
+        private List<string> blackList = new List<string>();
+
         public ActiveDirectoryServer(string whiteList, string blackList)
         {
             this.whiteListedGroups = this.ParseList(whiteList);
             this.blackListedGroups = this.ParseList(blackList);
+        }
+
+        public List<string> GetWhitelist()
+        {
+            return whiteList;
+        }
+
+        public List<string> GetBlacklist()
+        {
+            return blackList;
         }
 
         private string[] ParseList(string list)
@@ -37,13 +50,14 @@ namespace PapercutSFASBilling
         public void TestActiveDirectoryConnection()
         {
             this.test = true;
-            GetADuserLists(new SQLBillingServer());
+            GetADuserLists();
         }
 
-        public bool GetADuserLists(SQLBillingServer billingServer)
+        //public bool GetADuserLists(SQLBillingServer billingServer)
+        public bool GetADuserLists()
         {
-            List<string> whiteList = new List<string>();
-            List<string> blackList = new List<string>();
+            whiteList = new List<string>();
+            blackList = new List<string>();
 
             for (int i = 0; i < whiteListedGroups.Length; i++) //Fetches all members from the whitelist
             {
@@ -70,6 +84,9 @@ namespace PapercutSFASBilling
                     Console.WriteLine("Black List Members: " + blackList.Count());
                 }
             }
+            
+            /*
+             * Redundant Code (opting to not use the Database for the data manipulation.
             if (!test)
             {
                 WhiteListLength = whiteList.Count();
@@ -85,6 +102,9 @@ namespace PapercutSFASBilling
                     return false;
                 }
             }
+             */
+            WhiteListLength = whiteList.Count();
+            BlackListLength = blackList.Count();
             return true; //Made it to end of function!
         }
 
@@ -117,7 +137,7 @@ namespace PapercutSFASBilling
                 }
                 group.Dispose();
             }
-            NetIDs = NetIDs.Distinct().ToList();
+            NetIDs = NetIDs.Distinct<string>().ToList<string>();
             ctx.Dispose();
             return NetIDs;
         }

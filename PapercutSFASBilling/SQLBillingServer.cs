@@ -127,6 +127,38 @@ namespace PapercutSFASBilling
             return false;
         }
 
+        //New method to generate billable users without bothering with using a Database Backend.
+        public bool GenerateBillableUserList(ActiveDirectoryServer activeDirectoryServer, PaperCutServer paperCutServer)
+        {
+            List<string> mainList = new List<string>();
+            List<string> papercutUsers; //Only used if there is a white list
+
+            if (activeDirectoryServer.GetWhiteListLength() > 0)//If there is a white list, add white listed users that exist on PaperCut server to main list.
+            {
+                papercutUsers = paperCutServer.GetPapercutUsers();
+                foreach (string whiteListedUser in activeDirectoryServer.GetWhitelist())
+                {
+                    if (papercutUsers.Contains(whiteListedUser)) //If White listed user exists in Papercut DB, add to master List.
+                    {
+                        mainList.Add(whiteListedUser);
+                    }
+                }
+            }
+            else //No White list, so user PaperCut Master list.
+            {
+                mainList = paperCutServer.GetPapercutUsers();
+            }
+            mainList = mainList.Distinct<string>().ToList<string>();
+            foreach(string blackListedUser in activeDirectoryServer.GetBlacklist())
+            {
+                mainList.Remove(blackListedUser);
+            }
+            List<PapercutUser> papercutBalances = paperCutServer.RetrievePapercutBalances(mainList);
+            papercutBalances.RemoveAll(x => x.balance == 0);
+            billableUsers = papercutBalances;
+            return true;
+        }
+
         /*
          * Redundant Method
         public void GetPapercutBillableUsers()
@@ -176,8 +208,9 @@ namespace PapercutSFASBilling
                  * This Section of the Method Generates the Transaction information and Validates Billable Users. 
                 **************************************************************************************************************************************************/
 
-                foreach (PapercutUser user in billableUsers) // For each User:
+                while(billableUsers.Count() > 0) // Iterate Through Each User Until there are no users left:
                 {
+                    PapercutUser user = billableUsers[0];
                     string[] oracleInfo = Oracle.GetUserInfo(user.NetID, termCode);
                     if (oracleInfo.Length == 4)//If it is has 4 values then oracle information was retrieved. Validate User:
                     {
@@ -359,7 +392,7 @@ namespace PapercutSFASBilling
                  * Final Billing File Generation Completed. Generating Error File Before Return 
                 **************************************************************************************************************************************************/
 
-                //Now Write out Errors:
+                //Now Write out Errors: **Test if File exists, if so append, otherwise just write (or set to create if non existent and append?)
                 using (System.IO.StreamWriter file = new System.IO.StreamWriter(string.Concat(@"BillingErrors\", cActivityDate, "_Errors.txt"), true))
                 {
                     foreach (TransactionError error in errorLog)
