@@ -79,6 +79,8 @@
     <Content Include="OracleSQLQueries\CurrentTermCode.sql" />
     <Content Include="OracleSQLQueries\GraduationDate.sql" />
     <Content Include="OracleSQLQueries\StudentPIDStatus.sql" />
+    <Content Include="README.txt" />
+    <Content Include="Unlicense.txt" />
   </ItemGroup>
   <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
