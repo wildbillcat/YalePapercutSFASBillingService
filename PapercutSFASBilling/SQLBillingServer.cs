@@ -392,8 +392,10 @@ namespace PapercutSFASBilling
                  * Final Billing File Generation Completed. Generating Error File Before Return 
                 **************************************************************************************************************************************************/
 
+                
                 //Now Write out Errors: **Test if File exists, if so append, otherwise just write (or set to create if non existent and append?)
-                using (System.IO.StreamWriter file = new System.IO.StreamWriter(string.Concat(@"BillingErrors\", cActivityDate, "_Errors.txt"), true))
+                bool append = System.IO.File.Exists(string.Concat(@"BillingErrors\", cActivityDate, "_Errors.txt"));
+                using (System.IO.StreamWriter file = new System.IO.StreamWriter(string.Concat(@"BillingErrors\", cActivityDate.ToString(), "_Errors.txt"), append))
                 {
                     foreach (TransactionError error in errorLog)
                     {

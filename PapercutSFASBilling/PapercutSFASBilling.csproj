@@ -73,14 +73,14 @@
     <None Include="Database.vsd" />
   </ItemGroup>
   <ItemGroup>
-    <Content Include="Config.txt" />
+    <Content Include="Config.txt">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
     <Content Include="MSSQLQueries\CreateBillingsTable.sql" />
     <Content Include="MSSQLQueries\CreateBillingTransactions.sql" />
     <Content Include="OracleSQLQueries\CurrentTermCode.sql" />
     <Content Include="OracleSQLQueries\GraduationDate.sql" />
     <Content Include="OracleSQLQueries\StudentPIDStatus.sql" />
-    <Content Include="README.txt" />
-    <Content Include="Unlicense.txt" />
   </ItemGroup>
   <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
