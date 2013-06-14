@@ -45,6 +45,7 @@ namespace PapercutSFASBilling
             sqlType = 0;
             batchDetailCode = "test";
             batchUserID = "test";
+            billingsCompleted = new List<string>();
         }
 
         public SQLBillingServer(string user, string pass, string path, string db, string prefix, int type, string detailCode, string userID)
@@ -57,74 +58,6 @@ namespace PapercutSFASBilling
             sqlType = type;
             batchDetailCode = detailCode;
             batchUserID = userID;
-        }
-
-
-        public bool GenerateBillableUserList(bool WhiteList, bool BlackList, PaperCutServer paperCutServer)
-        {
-            string queryList = "";
-            bool run = false;
-                if (!WhiteList && !BlackList) //No BlackList or WhiteList, use MasterList
-                {
-                    run = true;
-                    queryList = "SELECT " + this.sqlPrefix + "temp_MainList.NetID" +
-                                "FROM " + this.sqlPrefix + "temp_MainList";
-                }
-                else if(!WhiteList && BlackList)//No WhiteList, MasterList inner join BlackList where null
-                {
-                    run = true;
-                    queryList = "SELECT " + this.sqlPrefix + "temp_MainList.NetID" +
-                                " FROM " + this.sqlPrefix + "temp_BlackList RIGHT JOIN " + this.sqlPrefix + "temp_MainList ON " + this.sqlPrefix + "temp_BlackList.NetID = " + this.sqlPrefix + "temp_MainList.NetID" +
-                                " WHERE (((" + this.sqlPrefix + "temp_BlackList.NetID) Is Null))";
-                }else if (WhiteList && !BlackList) //No BlackList, Join MasterList & WhiteList
-                {
-                    run = true;
-                    queryList = "SELECT " + this.sqlPrefix + "temp_MainList.NetID" +
-                                "FROM " + this.sqlPrefix + "temp_MainList INNER JOIN " + this.sqlPrefix + "temp_WhiteList ON " + this.sqlPrefix + "temp_MainList.NetID = " + this.sqlPrefix + "temp_WhiteList.NetID";
-                }else if (WhiteList && BlackList) //Join MasterList & WhiteList inner join BlackList  select where null
-                {
-                    run = true;
-                    queryList = "SELECT temp_MainList.NetID" +
-                                " FROM temp_BlackList RIGHT JOIN (temp_WhiteList INNER JOIN temp_MainList ON temp_WhiteList.NetID = temp_MainList.NetID) ON temp_BlackList.NetID = temp_MainList.NetID" +
-                                " WHERE (((temp_BlackList.NetID) Is Null))";
-                }
-                if (run)
-                {
-                    using (SqlConnection conn = new SqlConnection("Server=" + sqlPath + "; Database=" + sqlDatabase + "; User ID=" + sqlUser + "; Password=" + sqlPass + ";"))
-                    {
-                        List<string> BillableUsers = new List<string>();
-                        conn.Open();
-                        using (SqlCommand BillableUsersQuery = new SqlCommand(queryList, conn))
-                        {
-                            
-                            using (SqlDataReader results = BillableUsersQuery.ExecuteReader())
-                            {
-                                while (results.Read())
-                                {
-                                    BillableUsers.Add(results.GetString(0));
-                                }
-                            }
-                        }
-                        
-            
-                        //Redundant?**********************************************************************************************************************
-                       
-                        List<PapercutUser> BalanceList = paperCutServer.RetrievePapercutBalances(BillableUsers);
-                        this.billableUsers = BalanceList.Distinct<PapercutUser>().ToList<PapercutUser>();
-                            /*
-                        SqlCommand command = new SqlCommand("INSERT INTO temp_BillingList (NetID, Balance) VALUES(@NetID, @Balance)", conn);
-                        foreach (PapercutUser userO in BalanceList)
-                        {
-                            command.Parameters.AddWithValue("@NetID", userO.NetID);
-                            command.Parameters.AddWithValue("@Balance", userO.balance);
-                            command.ExecuteNonQuery();
-                            command.Dispose();
-                        }
-                             * */
-                    }
-                    return true;
-                }
-            return false;
         }
 
         //New method to generate billable users without bothering with using a Database Backend.
@@ -148,7 +81,6 @@ namespace PapercutSFASBilling
             {
                 mainList = paperCutServer.GetPapercutUsers();
             }
-            mainList = mainList.Distinct<string>().ToList<string>();
             foreach(string blackListedUser in activeDirectoryServer.GetBlacklist())
             {
                 mainList.Remove(blackListedUser);
@@ -159,31 +91,10 @@ namespace PapercutSFASBilling
             return true;
         }
 
-        /*
-         * Redundant Method
-        public void GetPapercutBillableUsers()
-        {
-            using (SqlConnection conn = new SqlConnection("Server=" + sqlPath + "; Database=" + sqlDatabase + "; User ID=" + sqlUser + "; Password=" + sqlPass + ";"))
-            {
-                conn.Open();
-                SqlCommand BillableUsersQuery = new SqlCommand("SELECT " + this.sqlPrefix + "temp_BillingList.NetID, " + this.sqlPrefix + "temp_BillingList.Balance FROM " + this.sqlPrefix + "temp_BillingList WHERE ((Not (" + this.sqlPrefix + "temp_BillingList.Balance)=0))", conn);
-                billableUsers = new List<PapercutUser>();
-                using (SqlDataReader results = BillableUsersQuery.ExecuteReader())
-                {
-                    while (results.Read())
-                    {
-                        billableUsers.Add(new PapercutUser(results.GetString(0), -1 * results.GetDouble(1))); //Inverts the Negative Balance to be positive, so that PaperCut account will be credited and SIS will be billed
-                    }
-                }
-                conn.Close();
-            }
-        }
-         * */
-
         public bool GenerateBilling(PaperCutServer Papercut, OracleServer Oracle)
         {
             //Normally a Billing can be completed in 1 go, however this will be set to true if an additional billing needs to be run.
-            bool BillingIncomplete = true; 
+            bool BillingIncomplete = false; 
             //List of any transaction errors that occur while generating billing.
             List<TransactionError> errorLog = new List<TransactionError>();
             //List of all successful transactions that are processed.
@@ -196,6 +107,7 @@ namespace PapercutSFASBilling
                 char[] cTermCode = termCode.ToCharArray();
                 //Formatted Activity Date for File
                 char[] cActivityDate = DateTime.Now.ToString("MMddyyyy").ToCharArray();
+                Console.WriteLine(cActivityDate);
                 //Formatted Detail Code for File
                 char[] cBatchDetailCode = BillingUtility.ValidDetailCode(batchDetailCode);
                 //Formatted User ID for File
@@ -227,15 +139,17 @@ namespace PapercutSFASBilling
                                 if (totalBilling + Math.Abs(user.balance) > 9999999.99)
                                 {
                                     // total billing would exceed with this user, break loop and submit billing.
+                                    BillingIncomplete = true;
                                     break;
                                 }
 
                                 char[] amount = BillingUtility.FormatAmount(user.balance);
-                                double billingAmount = double.Parse(amount.ToString()) / 100; //This ensures that the numerical value and billed value match (Eliminating possibility of fractions of Cents.
+                                double billingAmount = double.Parse(new string(amount)) / 100; //This ensures that the numerical value and billed value match (Eliminating possibility of fractions of Cents.
                                 char[] creditIndicator;
-                                if (user.balance < 0)//set Credit indicator
+                                if (user.balance > 0)//If user has positive balance, a credit is sitting on their account. Set Credit indicator
                                 {
-                                    creditIndicator = new char[] { 'C', 'R' };
+                                    creditIndicator = new char[] { 'C', 'R' }; 
+                                    billingAmount = billingAmount * -1;
                                 }
                                 else
                                 {
@@ -286,14 +200,15 @@ namespace PapercutSFASBilling
                         double finBatchTotalBalance = 0.00;//Value Sum
 
                         //Open file and Write Header Record
-                        using (System.IO.StreamWriter file = new System.IO.StreamWriter(string.Concat(@"BillingSubmissions\", BillingID, "_transactions.txt")))
+                        using (System.IO.StreamWriter file = new System.IO.StreamWriter(string.Concat(@"BillingSubmissions\", new string(BillingID), "_transactions.txt")))
                         {
                             //Now Write all detail records
                             foreach (BillingTransaction transaction in transactionLedger)
                             {
                                 //If statement to credit PaperCut server, else don't bill, throw error.
-                                if (Papercut.AdjustUserBalance(transaction.NetID, transaction.balance, string.Concat("Billing ID: ", BillingID, ". ", cActivityDate)))
+                                if (Papercut.AdjustUserBalance(transaction.NetID, transaction.balance, string.Concat("Billing ID: ", new string(BillingID), ". ", cActivityDate)))
                                 {
+                                    billingTransactionQuery.Parameters.Clear();//Clear query for next transaction
 
                                     billingTransactionQuery.Parameters.AddWithValue("@Balance", transaction.balance); //Just used to Track Billing in DB
                                     billingTransactionQuery.Parameters.AddWithValue("@NetID", transaction.NetID); //Just used to Track Billing in DB
@@ -333,7 +248,7 @@ namespace PapercutSFASBilling
                                     file.WriteLine("                                       ");
 
                                     billingTransactionQuery.ExecuteNonQuery();//Submit Written Transaction to Database
-
+                                   
                                     finTotalBilling = finTotalBilling + Math.Abs(transaction.balance);//Absolute Sum
                                     finBatchTotalBalance = finBatchTotalBalance + transaction.balance;//Value Sum
                                 }
@@ -353,7 +268,7 @@ namespace PapercutSFASBilling
                          * Final Billing File Generation Section of Method 
                         **************************************************************************************************************************************************/
                         //Create Billing File
-                        using (System.IO.StreamWriter file = new System.IO.StreamWriter(string.Concat(@"BillingSubmissions\", BillingID, ".txt")))
+                        using (System.IO.StreamWriter file = new System.IO.StreamWriter(string.Concat(@"BillingSubmissions\", new string(BillingID), ".txt")))
                         {
                             file.Write(cBatchUserID);
                             file.Write(BillingID);
@@ -363,7 +278,7 @@ namespace PapercutSFASBilling
                             //Header Record complete
 
                             //Now Open Temporary file and append it to the final Billing Submission
-                            using (System.IO.StreamReader temp = new System.IO.StreamReader(string.Concat(@"BillingSubmissions\", BillingID, "_transactions.txt")))
+                            using (System.IO.StreamReader temp = new System.IO.StreamReader(string.Concat(@"BillingSubmissions\", new string(BillingID), "_transactions.txt")))
                             {
                                 while (!temp.EndOfStream)
                                 {
@@ -373,10 +288,10 @@ namespace PapercutSFASBilling
                         }
 
                         //Add billing to list of Completed Billings
-                        billingsCompleted.Add(BillingID.ToString());
+                        billingsCompleted.Add(new string(BillingID));
 
                         //Billing File Created, Delete temporary file
-                        System.IO.File.Delete(string.Concat(@"BillingSubmissions\", BillingID, "_transactions.txt"));
+                        System.IO.File.Delete(string.Concat(@"BillingSubmissions\", new string(BillingID), "_transactions.txt"));
                         //BillingUtility;
                     }
                     catch (Exception e)
@@ -394,14 +309,14 @@ namespace PapercutSFASBilling
 
                 
                 //Now Write out Errors: **Test if File exists, if so append, otherwise just write (or set to create if non existent and append?)
-                bool append = System.IO.File.Exists(string.Concat(@"BillingErrors\", cActivityDate, "_Errors.txt"));
-                using (System.IO.StreamWriter file = new System.IO.StreamWriter(string.Concat(@"BillingErrors\", cActivityDate.ToString(), "_Errors.txt"), append))
+                using (System.IO.StreamWriter file = new System.IO.StreamWriter(string.Concat(@"BillingErrors\", new string(cActivityDate), "_Errors.txt"), true))
                 {
                     foreach (TransactionError error in errorLog)
                     {
                         file.WriteLine(string.Concat(error.Username, " : ", error.Error));
                     }
                 }
+                
                 conn.Close();
             }//End Using
             return BillingIncomplete;
@@ -477,13 +392,16 @@ namespace PapercutSFASBilling
             int ID;
 
             //MS SQL Server
-            string billingGen = string.Concat("Insert into ", this.sqlPrefix, "Billings (BatchStatus, BatchTotal, BatchTotalBalance) output inserted.id values(@BatchStatus, @BatchTotal, @BatchTotalBalance)");
+            string billingGen = string.Concat("Insert into ", this.sqlPrefix, "Billings (BatchStatus, BatchTotal, BatchTotalBalance) output inserted.BatchID values(@BatchStatus, @BatchTotal, @BatchTotalBalance)");
             using (SqlConnection conn = new SqlConnection("Server=" + sqlPath + "; Database=" + sqlDatabase + "; User ID=" + sqlUser + "; Password=" + sqlPass + ";"))
             {
                 conn.Open();
                 SqlCommand generateBilling = new SqlCommand(billingGen, conn);
+                generateBilling.Parameters.AddWithValue("@BatchStatus", 1);
+                generateBilling.Parameters.AddWithValue("@BatchTotal", BatchTotal);
+                generateBilling.Parameters.AddWithValue("@BatchTotalBalance", BatchTotalBalance);
                 generateBilling.ExecuteNonQuery();
-                ID = (int)generateBilling.ExecuteScalar();
+                ID = int.Parse(generateBilling.ExecuteScalar().ToString());
                 conn.Close();
             }
             return ID;
@@ -496,6 +414,7 @@ namespace PapercutSFASBilling
                 string UpdateBilling = string.Concat("UPDATE ", this.sqlPrefix, "Billings set (BatchStatus = @BatchStatus, BatchTotal = @BatchTotal, BatchTotalBalance = @BatchTotalBalance) WHERE BatchID = @BatchID");
                 using (SqlConnection conn = new SqlConnection("Server=" + sqlPath + "; Database=" + sqlDatabase + "; User ID=" + sqlUser + "; Password=" + sqlPass + ";"))
                 {
+                    conn.Open();
                     SqlCommand updateBilling = new SqlCommand(UpdateBilling, conn);
                     updateBilling.Parameters.AddWithValue("@BatchStatus", batchStatus);
                     updateBilling.Parameters.AddWithValue("@BatchTotal", batchTotal);
@@ -572,7 +491,8 @@ namespace PapercutSFASBilling
         {
             public static char[] FormatAmount(double amount)
                 {
-                    string cAmount = Math.Abs(amount).ToString("0.00"); //Find the Absolute Value, then convert it to a string
+                    string amount2 = (Math.Abs(amount*100)).ToString("0.00");
+                    string cAmount = amount2.Substring(0, amount2.IndexOf('.')); //Find the Absolute Value, then convert it to a string
                     cAmount.Remove(cAmount.Length - 3, 1); //Removes the "." from the number
                     if(cAmount.Length>9)//If the length is greater than 10 characters, then the bill is too much to be billed in a single batch transaction
                     {
@@ -639,11 +559,11 @@ namespace PapercutSFASBilling
 
             public static char[] ValidPID(string pid)
             {
-                if (pid.Length > 9)
+                if (pid.Length > 8)
                 {
                     throw new ValidationException(string.Concat("The PID number is too long! PID:", pid));
                 }
-                while (pid.Length < 9)
+                while (pid.Length < 8)
                 {
                     pid = string.Concat(" ", pid);
                 }
@@ -652,8 +572,15 @@ namespace PapercutSFASBilling
 
             public static char[] ValidSPRIDEN_ID(string spriden_id)
             {
-
-                throw new NotImplementedException("ValidSPRIDEN_ID not yet implemented");
+                if (spriden_id.Length > 9)
+                {
+                    throw new ValidationException(string.Concat("The PID number is too long! PID:", spriden_id));
+                }
+                while (spriden_id.Length < 9)
+                {
+                    spriden_id = string.Concat(" ", spriden_id);
+                }
+                return spriden_id.ToCharArray();
             }
         }
     }

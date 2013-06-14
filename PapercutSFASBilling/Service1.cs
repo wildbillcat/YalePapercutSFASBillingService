@@ -50,6 +50,15 @@ namespace PapercutSFASBilling
             
         private void LoadConfig(string[] args)
         {
+            //Test for Billing and Error Folders
+            if (!System.IO.Directory.Exists("BillingErrors"))
+            {
+                System.IO.Directory.CreateDirectory("BillingErrors");
+            }
+            if (!System.IO.Directory.Exists("BillingSubmissions"))
+            {
+                System.IO.Directory.CreateDirectory("BillingSubmissions");
+            }
             bool test = false;
             //parse args
             for (int i = 0; i < args.Length; i++)
@@ -264,14 +273,7 @@ namespace PapercutSFASBilling
                 return;
             }
 
-            //bool whiteListQ = 0 != activeDirectoryServer.GetWhiteListLength();
-            //bool blackListQ = 0 != activeDirectoryServer.GetBlackListLength();
-
             billingServer.GenerateBillableUserList(activeDirectoryServer, papercutServer);
-
-            //REDUNDANT METHOD
-            //billingServer.GetPapercutBillableUsers(); //Maybe just return number to bool? 
-
 
             if (!billingServer.PapercutUsersBillable()) //if there aren't billable users, return
             {
@@ -283,8 +285,7 @@ namespace PapercutSFASBilling
             //Now that File(s) are generated, retrieve list of the billings and submit them.
             //throw new NotImplementedException();
 
-            //When Method is complete, force garbage collection to scrap all resources.
-            billingServer.ClearTemporaryTables();
+            //When Method is complete, force garbage collection to scrap all resources
             GC.Collect();  
         }
     }

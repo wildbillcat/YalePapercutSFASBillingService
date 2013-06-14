@@ -105,6 +105,8 @@ namespace PapercutSFASBilling
              */
             WhiteListLength = whiteList.Count();
             BlackListLength = blackList.Count();
+            blackList = blackList.Distinct<string>().ToList<string>();
+            whiteList = whiteList.Distinct<string>().ToList<string>();
             return true; //Made it to end of function!
         }
 
@@ -131,13 +133,12 @@ namespace PapercutSFASBilling
                 {
                     if (test)
                     {
-                        Console.WriteLine(string.Concat("Member: ", p.DisplayName, " - ", p.GetType()));
+                        Console.WriteLine(string.Concat("Member: ", p.SamAccountName, " - ", p.GetType()));
                     }
-                    NetIDs.Add(p.DisplayName);
+                    NetIDs.Add(p.SamAccountName);
                 }
                 group.Dispose();
             }
-            NetIDs = NetIDs.Distinct<string>().ToList<string>();
             ctx.Dispose();
             return NetIDs;
         }
