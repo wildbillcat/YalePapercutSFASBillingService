@@ -28,7 +28,7 @@ namespace PapercutSFASBilling
             executablePath = WinSCPPath;
         }
 
-        public bool UploadBillings(string[] billingFiles)
+        public bool UploadBillings(List<string> billingFiles)
         {
             try
             {
