@@ -47,9 +47,13 @@
     <Reference Include="System.Data" />
     <Reference Include="System.ServiceProcess" />
     <Reference Include="System.Xml" />
+    <Reference Include="WinSCP">
+      <HintPath>..\..\..\..\csharp\winscp515automation\WinSCP.dll</HintPath>
+    </Reference>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="ActiveDirectoryServer.cs" />
+    <Compile Include="SFASSFTP.cs" />
     <Compile Include="TransactionError.cs" />
     <Compile Include="ValidationException.cs" />
     <Compile Include="OracleServer.cs" />

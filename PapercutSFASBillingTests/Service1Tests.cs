@@ -20,6 +20,8 @@ namespace PapercutSFASBillingTests
         [TestMethod]
         public void RunTestBilling()
         {
+            PaperCutServerTests pcut = new PaperCutServerTests();
+            pcut.ChargeWorkingUser();
             Service1 services = new Service1();
             string[] arguments = new string[2] { "-p", @"E:\Development\Visual Studio 2012\Projects\PapercutSFASBilling\PapercutSFASBillingTests\TestConfigs\Test1"};
             services.TestBilling(arguments);

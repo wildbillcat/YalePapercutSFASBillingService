@@ -58,6 +58,7 @@ namespace PapercutSFASBilling
             sqlType = type;
             batchDetailCode = detailCode;
             batchUserID = userID;
+            billingsCompleted = new List<string>(); 
         }
 
         //New method to generate billable users without bothering with using a Database Backend.
@@ -292,7 +293,6 @@ namespace PapercutSFASBilling
 
                         //Billing File Created, Delete temporary file
                         System.IO.File.Delete(string.Concat(@"BillingSubmissions\", new string(BillingID), "_transactions.txt"));
-                        //BillingUtility;
                     }
                     catch (Exception e)
                     {
@@ -380,13 +380,6 @@ namespace PapercutSFASBilling
             return true;
         }
 
-        public void Reset()
-        {
-            this.ClearTemporaryTables();
-            this.billableUsers = null;
-            this.billingsCompleted = null;
-        }
-
         public int GenerateNewBillingID(char[] BatchTotal,double BatchTotalBalance)
         {
             int ID;
@@ -407,11 +400,11 @@ namespace PapercutSFASBilling
             return ID;
         }
 
-        public bool UpdateBillingID(int batchID, int batchStatus, char[] batchTotal, double batchTotalBalance)
+        public void UpdateBillingID(int batchID, int batchStatus, char[] batchTotal, double batchTotalBalance)
         {
             try
             {
-                string UpdateBilling = string.Concat("UPDATE ", this.sqlPrefix, "Billings set (BatchStatus = @BatchStatus, BatchTotal = @BatchTotal, BatchTotalBalance = @BatchTotalBalance) WHERE BatchID = @BatchID");
+                string UpdateBilling = string.Concat("UPDATE ", this.sqlPrefix, "Billings SET BatchStatus = @BatchStatus, BatchTotal = @BatchTotal, BatchTotalBalance = @BatchTotalBalance WHERE BatchID = @BatchID");
                 using (SqlConnection conn = new SqlConnection("Server=" + sqlPath + "; Database=" + sqlDatabase + "; User ID=" + sqlUser + "; Password=" + sqlPass + ";"))
                 {
                     conn.Open();
@@ -423,68 +416,13 @@ namespace PapercutSFASBilling
                     updateBilling.ExecuteNonQuery();
                     conn.Close();
                 }
-                return true;
             }
             catch (Exception e)
             {
                 //ERROR WITH QUERY!!!!
                 Console.Error.WriteLine(e.Message);
-                return false;
+                throw new Exception(string.Concat("Billing ID not Updated! Error: ", e.Message));
             }
-        }
-
-        public bool ClearTemporaryTables()
-        {
-            using (SqlConnection conn = new SqlConnection("Server=" + sqlPath + "; Database=" + sqlDatabase + "; User ID=" + sqlUser + "; Password=" + sqlPass + ";"))
-            {
-                conn.Open();
-                string query = "DROP TABLE " + sqlPrefix + "temp_WhiteList";
-                SqlCommand dropTable = new SqlCommand(query, conn);
-                try
-                {
-                    dropTable.ExecuteNonQuery();
-                }
-                catch (SqlException e)
-                {
-                    Console.WriteLine(e.ErrorCode);
-                    if (e.ErrorCode != -2146232060)
-                    {
-                        throw e;
-                    }
-                }
-
-                query = "DROP TABLE " + sqlPrefix + "temp_BlackList";
-                dropTable = new SqlCommand(query, conn);
-                try
-                {
-                    dropTable.ExecuteNonQuery();
-                }
-                catch (SqlException e)
-                {
-                    Console.WriteLine(e.ErrorCode);
-                    if (e.ErrorCode != -2146232060)
-                    {
-                        throw e;
-                    }
-                }
-
-                query = "DROP TABLE " + sqlPrefix + "temp_Mainlist";
-                dropTable = new SqlCommand(query, conn);
-                try
-                {
-                    dropTable.ExecuteNonQuery();
-                }
-                catch (SqlException e)
-                {
-                    Console.WriteLine(e.ErrorCode);
-                    if (e.ErrorCode != -2146232060)
-                    {
-                        throw e;
-                    }
-                }
-                conn.Close();
-            }
-            return true;
         }
         
         private static class BillingUtility

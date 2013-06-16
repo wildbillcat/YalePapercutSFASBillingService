@@ -9,14 +9,12 @@ namespace PapercutSFASBilling
 
     public class PaperCutServer
     {
-        string error;
         ServerCommandProxy serverProxy;
         private List<string> papercutUsers;
 
         public PaperCutServer(string path, string apikey, int port)
         {
             serverProxy = new ServerCommandProxy(path, port, apikey);
-            error = "Error not yet set.";
             papercutUsers = new List<string>();
         }
 
@@ -92,11 +90,6 @@ namespace PapercutSFASBilling
                 }
             }
             return true;
-        }
-
-        public string GetError()
-        {
-            return error;
         }
 
         public List<PapercutUser> RetrievePapercutBalances(List<string> userList)

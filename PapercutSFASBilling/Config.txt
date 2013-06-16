@@ -18,3 +18,20 @@ ActiveDirectoryBlackList = Active Directory Group A, Active Directory Group B
 
 BatchUserID = S$USER
 BatchDetailCode = TEST
+
+SFTPUser = username
+SFTPPassword = 
+SFTPKeyPath = 
+SFTPServerPath = ftp.domain.url
+SFTPPortNumber = 22
+SFTPRemoteDirectory = 
+WinSCPPath = 
+
+SMTPServer = smtp.mail.url
+SMTPPort = 25
+SSLEnabled = false
+SMTPUser = 
+SMTPPassword = 
+EmailFrom = PapercutBilling@mail.url
+EmailTo = administrator1@mail.url, administrator2@mail.url
+SendBillingSummary = true

@@ -245,8 +245,8 @@ namespace PapercutSFASBilling
                 Console.WriteLine("Testing Active Directory Connection:");
                 this.activeDirectoryServer.TestActiveDirectoryConnection();
                 Console.WriteLine("Testing Billing Server Connection:");
-                Console.WriteLine("     Drop Temp Tables...");
-                this.billingServer.ClearTemporaryTables();
+                Console.WriteLine("Test Must Be Made, not Doing anything Presently");
+              
                 if (papercutServer.RetrievePapercutUsers(billingServer))
                 {
                     Console.WriteLine("Retrieved PaperCut User list and imported to table!");
