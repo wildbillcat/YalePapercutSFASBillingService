@@ -12,10 +12,9 @@ namespace PapercutSFASBilling
         
         SessionOptions sessionOptions;
         string remoteDirectory;
-        string[] billingFiles;
         string executablePath;
         
-        public SFASSFTP(string SFTPUser, string SFTPPassword, string SFTPKeyPath, string SFTPServerPath, int SFTPPortNumber, string WinSCPPath, string SSHHostKeyFingerprint, string RemoteDirectory, string[] BillingFiles)
+        public SFASSFTP(string SFTPUser, string SFTPKeyPath, string SFTPServerPath, int SFTPPortNumber, string WinSCPPath, string SSHHostKeyFingerprint, string RemoteDirectory)
         {
             sessionOptions = new SessionOptions {
                 Protocol = Protocol.Sftp,
@@ -26,11 +25,10 @@ namespace PapercutSFASBilling
                 SshPrivateKeyPath = SFTPKeyPath
             };
             remoteDirectory = RemoteDirectory;
-            billingFiles = BillingFiles;
             executablePath = WinSCPPath;
         }
 
-        public bool UploadBillings(string[] billings)
+        public bool UploadBillings(string[] billingFiles)
         {
             try
             {

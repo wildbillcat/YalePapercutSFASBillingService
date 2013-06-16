@@ -200,7 +200,7 @@ namespace PapercutSFASBilling
                         double finTotalBilling = 0.00;//Absolute Sum
                         double finBatchTotalBalance = 0.00;//Value Sum
 
-                        //Open file and Write Header Record
+                        //Open file
                         using (System.IO.StreamWriter file = new System.IO.StreamWriter(string.Concat(@"BillingSubmissions\", new string(BillingID), "_transactions.txt")))
                         {
                             //Now Write all detail records
@@ -286,10 +286,10 @@ namespace PapercutSFASBilling
                                     file.WriteLine(temp.ReadLine());
                                 }
                             }
+                            //Add billing to list of Completed Billings
+                            string fullPath = ((System.IO.FileStream)(file.BaseStream)).Name;
+                            billingsCompleted.Add(fullPath);
                         }
-
-                        //Add billing to list of Completed Billings
-                        billingsCompleted.Add(new string(BillingID));
 
                         //Billing File Created, Delete temporary file
                         System.IO.File.Delete(string.Concat(@"BillingSubmissions\", new string(BillingID), "_transactions.txt"));
@@ -424,7 +424,12 @@ namespace PapercutSFASBilling
                 throw new Exception(string.Concat("Billing ID not Updated! Error: ", e.Message));
             }
         }
-        
+
+        public List<string> GetCompletedBillings()
+        {
+            return billingsCompleted;
+        }
+
         private static class BillingUtility
         {
             public static char[] FormatAmount(double amount)

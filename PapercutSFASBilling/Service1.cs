@@ -17,6 +17,7 @@ namespace PapercutSFASBilling
         private SQLBillingServer billingServer;
         private OracleServer oracleServer;
         private ActiveDirectoryServer activeDirectoryServer;
+        private SFASSFTP FTPServer;
         private string WorkingPath;
         private string[] arguments;
 
@@ -118,6 +119,15 @@ namespace PapercutSFASBilling
             string batchUserID = "";
             string batchDetailCode = "";
 
+            //SFTP Configuration
+            string SFTPUser = "";
+            string SFTPKeyPath = "";
+            string SFTPServerPath = "";
+            int SFTPPortNumber = 22;
+            string SFTPRemoteDirectory = "";
+            string WinSCPPath = "";
+            string SSHHostKeyFingerprint = "";
+
 
             // Read the file line by line and parse out configuration information.
             if (test)
@@ -218,6 +228,34 @@ namespace PapercutSFASBilling
                     {
                         batchDetailCode = value;
                     }
+                    else if (setting.Equals("SFTPUser"))
+                    {
+                        SFTPUser = value;
+                    }
+                    else if (setting.Equals("SFTPKeyPath"))
+                    {
+                        SFTPKeyPath = value;
+                    }
+                    else if (setting.Equals("SFTPServerPath"))
+                    {
+                        SFTPServerPath = value;
+                    }
+                    else if (setting.Equals("SFTPPortNumber"))
+                    {
+                        SFTPPortNumber = int.Parse(value);
+                    }
+                    else if (setting.Equals("SFTPRemoteDirectory"))
+                    {
+                        SFTPRemoteDirectory = value;
+                    }
+                    else if (setting.Equals("WinSCPPath"))
+                    {
+                        WinSCPPath = value;
+                    }
+                    else if (setting.Equals("SSHHostKeyFingerprint"))
+                    {
+                        SSHHostKeyFingerprint = value;
+                    }
                     else
                     {
                         //unrecognized line. Do nothing
@@ -233,7 +271,7 @@ namespace PapercutSFASBilling
             this.billingServer = new SQLBillingServer(sqlUser, sqlPass, sqlPath, sqlDatabase, sqlPrefix, sqlType, batchDetailCode, batchUserID);
             this.oracleServer = new OracleServer(oracleUser, oraclePass, oraclePath);
             this.activeDirectoryServer = new ActiveDirectoryServer(whiteList, blackList);
-
+            this.FTPServer = new SFASSFTP(SFTPUser, SFTPKeyPath, SFTPServerPath, SFTPPortNumber, WinSCPPath, SSHHostKeyFingerprint, SFTPRemoteDirectory);
             if (test)
             {
                 Console.WriteLine("Testing Oracle Connection:");
@@ -283,7 +321,7 @@ namespace PapercutSFASBilling
             while (this.billingServer.GenerateBilling(papercutServer, oracleServer));
 
             //Now that File(s) are generated, retrieve list of the billings and submit them.
-            //throw new NotImplementedException();
+            
 
             //When Method is complete, force garbage collection to scrap all resources
             GC.Collect();  

@@ -26,6 +26,7 @@ SFTPServerPath = ftp.domain.url
 SFTPPortNumber = 22
 SFTPRemoteDirectory = 
 WinSCPPath = 
+SSHHostKeyFingerprint = 
 
 SMTPServer = smtp.mail.url
 SMTPPort = 25
