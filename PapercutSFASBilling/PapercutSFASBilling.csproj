@@ -53,6 +53,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="ActiveDirectoryServer.cs" />
+    <Compile Include="EmailServer.cs" />
     <Compile Include="SFASSFTP.cs" />
     <Compile Include="TransactionError.cs" />
     <Compile Include="ValidationException.cs" />

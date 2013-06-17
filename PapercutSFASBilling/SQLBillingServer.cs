@@ -33,6 +33,7 @@ namespace PapercutSFASBilling
 
         private List<PapercutUser> billableUsers;
         private List<string> billingsCompleted; //List of the Billing Batch IDs completed.
+        private List<char[]> billingsCompletedIDs;
 
         //This constructor creates an invalid test object.
         public SQLBillingServer()
@@ -289,6 +290,7 @@ namespace PapercutSFASBilling
                             //Add billing to list of Completed Billings
                             string fullPath = ((System.IO.FileStream)(file.BaseStream)).Name;
                             billingsCompleted.Add(fullPath);
+                            billingsCompletedIDs.Add(BillingID);
                         }
 
                         //Billing File Created, Delete temporary file
@@ -428,6 +430,34 @@ namespace PapercutSFASBilling
         public List<string> GetCompletedBillings()
         {
             return billingsCompleted;
+        }
+
+        public List<char[]> GetCompletedBillingIDs()
+        {
+            return billingsCompletedIDs;
+        }
+
+        public double GetBillingTotal(char[] billingID)
+        {
+            try
+            {
+                string GetBillingTotal = string.Concat("SELECT SUM(Balance) ", "FROM ", this.sqlPrefix, "BillingTransactions WHERE BatchID = @BatchID");
+                using (SqlConnection conn = new SqlConnection("Server=" + sqlPath + "; Database=" + sqlDatabase + "; User ID=" + sqlUser + "; Password=" + sqlPass + ";"))
+                {
+                    conn.Open();
+                    SqlCommand updateBilling = new SqlCommand(GetBillingTotal, conn);
+                    updateBilling.Parameters.AddWithValue("@BatchID", billingID);
+                    double total = (double) updateBilling.ExecuteScalar();
+                    conn.Close();
+                    return total;
+                }
+            }
+            catch (Exception e)
+            {
+                //ERROR WITH QUERY!!!!
+                Console.Error.WriteLine(e.Message);
+                return 0.00;
+            }
         }
 
         private static class BillingUtility

@@ -7,7 +7,7 @@ using WinSCP;
 
 namespace PapercutSFASBilling
 {
-    class SFASSFTP
+    public class SFASSFTP
     {
         
         SessionOptions sessionOptions;
@@ -16,7 +16,8 @@ namespace PapercutSFASBilling
         
         public SFASSFTP(string SFTPUser, string SFTPKeyPath, string SFTPServerPath, int SFTPPortNumber, string WinSCPPath, string SSHHostKeyFingerprint, string RemoteDirectory)
         {
-            sessionOptions = new SessionOptions {
+            sessionOptions = new SessionOptions
+            {
                 Protocol = Protocol.Sftp,
                 HostName = SFTPServerPath,
                 UserName = SFTPUser,

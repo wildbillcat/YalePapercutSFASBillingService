@@ -321,7 +321,14 @@ namespace PapercutSFASBilling
             while (this.billingServer.GenerateBilling(papercutServer, oracleServer));
 
             //Now that File(s) are generated, retrieve list of the billings and submit them.
-            this.FTPServer.UploadBillings(billingServer.GetCompletedBillings());
+            if (this.FTPServer.UploadBillings(billingServer.GetCompletedBillings()))
+            {
+                //update Billing Status
+                //
+            }
+
+            //Send Summary e-mail
+
 
             //When Method is complete, force garbage collection to scrap all resources
             GC.Collect();  
