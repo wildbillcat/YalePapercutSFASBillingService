@@ -12,7 +12,7 @@ namespace PapercutSFASBillingTests
         public void UploadFiles()
         {
             List<string> billingsCompleted = new List<string>();
-            SFASSFTP ftpServer = new SFASSFTP(TestingParameters.SFTPUser, TestingParameters.SFTPKeyPath, TestingParameters.SFTPServerPath, TestingParameters.SFTPPortNumber, TestingParameters.WinSCPPath, TestingParameters.SSHHostKeyFingerprint, TestingParameters.RemoteDirectory);
+            SFASSFTP ftpServer = new SFASSFTP(TestingParameters.SFTPUser, TestingParameters.SFTPPassword, TestingParameters.SFTPServerPath, TestingParameters.SFTPPortNumber, TestingParameters.WinSCPPath, TestingParameters.RemoteDirectory, TestingParameters.FileProtocol);
             using (System.IO.StreamWriter file = new System.IO.StreamWriter(string.Concat(@"BillingSubmissions\", "TESTFILE", ".txt")))
             {
                 file.Write("TESTFILE");

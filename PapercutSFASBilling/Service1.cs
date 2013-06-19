@@ -7,6 +7,8 @@ using System.Linq;
 using System.ServiceProcess;
 using System.Text;
 using System.Threading.Tasks;
+using System.Timers;
+using WinSCP;
 
 namespace PapercutSFASBilling
 {
@@ -18,8 +20,12 @@ namespace PapercutSFASBilling
         private OracleServer oracleServer;
         private ActiveDirectoryServer activeDirectoryServer;
         private SFASSFTP FTPServer;
+        private EmailServer emailServer;
         private string WorkingPath;
         private string[] arguments;
+        private Timer tm;
+        DateTime LastBilling;
+        bool SendBillingSummary = true;
 
         public Service1()
         {
@@ -29,9 +35,26 @@ namespace PapercutSFASBilling
         protected override void OnStart(string[] args)
         {
             LoadConfig(args);
+            tm = new Timer();
+            tm.Elapsed += new ElapsedEventHandler(OnTimedEvent);
+            tm.Interval = 6000; // 6 Seconds
+            tm.Start();
+            //tm.Interval = 60000; // 1 Minutes
+            //tm.Interval = 300000; // 5 Minutes
+            //tm.Interval = 1800000; // 30 Minutes
         }
 
-        
+        private void OnTimedEvent(object source, ElapsedEventArgs e)
+        {
+            //Each time the timer fires, check to see if it is the next day for billing.
+            if (DateTime.Now.Day != LastBilling.Day)
+            {
+                tm.Stop();
+                this.ProcessBilling();
+                LastBilling = billingServer.GetLastBilling();
+                tm.Start();
+            }
+        }
 
         protected override void OnStop()
         {
@@ -121,12 +144,24 @@ namespace PapercutSFASBilling
 
             //SFTP Configuration
             string SFTPUser = "";
+            string SFTPPassword = "";
             string SFTPKeyPath = "";
             string SFTPServerPath = "";
             int SFTPPortNumber = 22;
             string SFTPRemoteDirectory = "";
             string WinSCPPath = "";
             string SSHHostKeyFingerprint = "";
+            Protocol FileProtocol = Protocol.Sftp;
+
+            //SMTP Server Configuration
+            string SMTPServer = "";
+            int SMTPPort = 25;
+            bool SSLEnabled = false;
+            string SMTPUser = "";
+            string SMTPPassword = "";
+            string EmailFrom = "";
+            string EmailTo = "";
+            
 
 
             // Read the file line by line and parse out configuration information.
@@ -151,7 +186,7 @@ namespace PapercutSFASBilling
                     string value = line.Substring(last + 1, endofline - (last + 1)).Trim();
                     Console.WriteLine("Value: " + value);
                     Console.WriteLine(" ");
-
+/////////////////////PaperCut Server///////////////////////////////////////////////////////
                     if (setting.Equals("PapercutPath"))
                     {
                         paperCutPath = value;
@@ -164,6 +199,7 @@ namespace PapercutSFASBilling
                     {
                         paperCutPort = int.Parse(value);
                     }
+////////////////////SQL Billing Server/////////////////////////////////////////////////////
                     else if (setting.Equals("sqlBillingUser"))
                     {
                         sqlUser = value;
@@ -200,6 +236,7 @@ namespace PapercutSFASBilling
                         }
 
                     }
+////////////////////Oracle Server///////////////////////////////////////////
                     else if (setting.Equals("oracleUser"))
                     {
                         oracleUser = value;
@@ -212,6 +249,7 @@ namespace PapercutSFASBilling
                     {
                         oraclePath = value;
                     }
+////////////////////Active Directory///////////////////////////////////////
                     else if (setting.Equals("ActiveDirectoryWhiteList"))
                     {
                         whiteList = value;
@@ -220,6 +258,7 @@ namespace PapercutSFASBilling
                     {
                         blackList = value;
                     }
+////////////////////Batch Configuration Information////////////////////////
                     else if (setting.Equals("BatchUserID"))
                     {
                         batchUserID = value;
@@ -228,6 +267,7 @@ namespace PapercutSFASBilling
                     {
                         batchDetailCode = value;
                     }
+////////////////////SFTP Server Configuration//////////////////////////////
                     else if (setting.Equals("SFTPUser"))
                     {
                         SFTPUser = value;
@@ -244,7 +284,7 @@ namespace PapercutSFASBilling
                     {
                         SFTPPortNumber = int.Parse(value);
                     }
-                    else if (setting.Equals("SFTPRemoteDirectory"))
+                    else if (setting.Equals("RemoteDirectory"))
                     {
                         SFTPRemoteDirectory = value;
                     }
@@ -255,6 +295,58 @@ namespace PapercutSFASBilling
                     else if (setting.Equals("SSHHostKeyFingerprint"))
                     {
                         SSHHostKeyFingerprint = value;
+                    }
+                    else if (setting.Equals("SFTPPassword"))
+                    {
+                        SFTPPassword = value;
+                    }
+                    else if (setting.Equals("FileProtocol"))
+                    {
+                        if (value.Equals("SFTP", StringComparison.InvariantCultureIgnoreCase))
+                        {
+                            FileProtocol = Protocol.Sftp;
+                        }
+                        else if (value.Equals("FTP", StringComparison.InvariantCultureIgnoreCase))
+                        {
+                            FileProtocol = Protocol.Ftp;
+                        }
+                        else if (value.Equals("SCP", StringComparison.InvariantCultureIgnoreCase))
+                        {
+                            FileProtocol = Protocol.Scp;
+                        }
+                        else
+                        {
+                            //Unrecognized database type
+                        }
+                    }
+                    ////////////////////Email Server Configuration////////////////////////////////
+                    else if (setting.Equals("SMTPServer"))
+                    {
+                        SMTPServer = value;
+                    }
+                    else if (setting.Equals("SMTPPort"))
+                    {
+                        SMTPPort = int.Parse(value);
+                    }
+                    else if (setting.Equals("SSLEnabled"))
+                    {
+                        SSLEnabled = bool.Parse(value);
+                    }
+                    else if (setting.Equals("SMTPUser"))
+                    {
+                        SMTPUser = value;
+                    }
+                    else if (setting.Equals("SMTPPassword"))
+                    {
+                        SMTPPassword = value;
+                    }
+                    else if (setting.Equals("EmailFrom"))
+                    {
+                        EmailFrom = value;
+                    }
+                    else if (setting.Equals("EmailTo"))
+                    {
+                        EmailTo = value;
                     }
                     else
                     {
@@ -271,7 +363,16 @@ namespace PapercutSFASBilling
             this.billingServer = new SQLBillingServer(sqlUser, sqlPass, sqlPath, sqlDatabase, sqlPrefix, sqlType, batchDetailCode, batchUserID);
             this.oracleServer = new OracleServer(oracleUser, oraclePass, oraclePath);
             this.activeDirectoryServer = new ActiveDirectoryServer(whiteList, blackList);
-            this.FTPServer = new SFASSFTP(SFTPUser, SFTPKeyPath, SFTPServerPath, SFTPPortNumber, WinSCPPath, SSHHostKeyFingerprint, SFTPRemoteDirectory);
+            if (FileProtocol.Equals(Protocol.Ftp))
+            {
+                this.FTPServer = new SFASSFTP(SFTPUser, SFTPPassword, SFTPServerPath, SFTPPortNumber, WinSCPPath, SFTPRemoteDirectory, FileProtocol);
+            }
+            else
+            {
+                this.FTPServer = new SFASSFTP(SFTPUser, SFTPPassword, SFTPKeyPath, SFTPServerPath, SFTPPortNumber, WinSCPPath, SSHHostKeyFingerprint, SFTPRemoteDirectory, FileProtocol);
+            }
+            this.emailServer = new EmailServer(EmailFrom, EmailTo, SMTPServer, SMTPPort, SSLEnabled, SMTPUser, SMTPPassword);
+            this.LastBilling = billingServer.GetLastBilling();
             if (test)
             {
                 Console.WriteLine("Testing Oracle Connection:");
@@ -285,7 +386,7 @@ namespace PapercutSFASBilling
                 Console.WriteLine("Testing Billing Server Connection:");
                 Console.WriteLine("Test Must Be Made, not Doing anything Presently");
               
-                if (papercutServer.RetrievePapercutUsers(billingServer))
+                if (papercutServer.RetrievePapercutUsers())
                 {
                     Console.WriteLine("Retrieved PaperCut User list and imported to table!");
                 }
@@ -301,6 +402,7 @@ namespace PapercutSFASBilling
             if (!papercutServer.RetrievePapercutUsers())
             {
                 //Write Failure to Log
+                emailServer.sendMessage(string.Concat("Billing Failed! Could not pull Papercut Users! ", DateTime.Now.ToString("MM/dd/yyyy")));
                 return;
             }
 
@@ -308,6 +410,7 @@ namespace PapercutSFASBilling
             if (!activeDirectoryServer.GetADuserLists())
             {
                 //Write Failure to Log
+                emailServer.sendMessage(string.Concat("Billing Failed! Could not pull Active Directory Users! ", DateTime.Now.ToString("MM/dd/yyyy")));
                 return;
             }
 
@@ -315,6 +418,8 @@ namespace PapercutSFASBilling
 
             if (!billingServer.PapercutUsersBillable()) //if there aren't billable users, return
             {
+                LastBilling = DateTime.Now;
+                emailServer.sendMessage(string.Concat("Billing Not Run, there are no billable users! ", LastBilling.ToString("MM/dd/yyyy")));
                 return;
             }
             //There are billable users, submit the batch of users for billing! Runs a billing until the billing has been run across all other users.
@@ -324,11 +429,20 @@ namespace PapercutSFASBilling
             if (this.FTPServer.UploadBillings(billingServer.GetCompletedBillings()))
             {
                 //update Billing Status
-                //
+                foreach(char[] bill in billingServer.GetCompletedBillingIDs()){
+                    billingServer.UpdateBillingStatus(int.Parse(new string(bill)), 6);
+                }
+            }
+            else
+            {
+                emailServer.sendMessage(string.Concat("Billing Run, but File not submitted. Error with Upload.", DateTime.Now.ToString("MM/dd/yyyy")));
             }
 
             //Send Summary e-mail
-
+            if (SendBillingSummary)
+            {
+                emailServer.SendSummaryEmail(billingServer, billingServer.GetCompletedBillingIDs());
+            }
 
             //When Method is complete, force garbage collection to scrap all resources
             GC.Collect();  

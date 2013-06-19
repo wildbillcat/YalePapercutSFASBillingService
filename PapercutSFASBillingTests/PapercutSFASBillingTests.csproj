@@ -57,6 +57,10 @@
   <ItemGroup>
     <Reference Include="System" />
     <Reference Include="System.ServiceProcess" />
+    <Reference Include="WinSCP, Version=1.0.6.3261, Culture=neutral, PublicKeyToken=b5f19f5762436b89, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\..\..\csharp\winscp515automation\WinSCP.dll</HintPath>
+    </Reference>
   </ItemGroup>
   <Choose>
     <When Condition="('$(VisualStudioVersion)' == '10.0' or '$(VisualStudioVersion)' == '') and '$(TargetFrameworkVersion)' == 'v3.5'">
@@ -78,6 +82,7 @@
     <Compile Include="TestConfigs\TestingParameters.cs" />
     <Compile Include="PaperCutServerTests.cs" />
     <Compile Include="SFASSFTPTests.cs" />
+    <Compile Include="EmailServerTests.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="BillingTestClassDiagram.cd" />

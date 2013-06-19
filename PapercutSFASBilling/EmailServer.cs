@@ -27,18 +27,40 @@ namespace PapercutSFASBilling
             this.enableSsl = sslEnable;
         }
 
-        public bool SendSummaryEmail(SQLBillingServer Billing)
+        public bool SendSummaryEmail(SQLBillingServer Billing, List<char[]> BillingIDs)
         {
-            string message = "Billing(s) have been run. Summary: \n ";
-            foreach(char[] bill in Billing.GetCompletedBillingIDs())
+            StringBuilder mess = new StringBuilder();
+            foreach(char[] bill in BillingIDs)
             {
-                message = string.Concat(message, "Billing ID: ", new string(bill), " = ", Billing.GetBillingTotal(bill), "\n");
+                mess.Append("Billing ID :");
+                mess.Append(bill);
+                mess.Append(" Transaction Total = ");
+                mess.Append(Billing.GetBillingTotal(bill));
+                mess.Append(" Billing Total = ");
+                mess.Append(Billing.GetBillingTotalB(bill));
+                mess.Append("\n");
+            }
+            mess.Append("\n");
+            mess.Append("\n");
+            mess.Append("Today's Errors: \n");
+            try{
+                using(System.IO.StreamReader temp = new System.IO.StreamReader(Billing.GetErrorPath()))
+                {
+                    while (!temp.EndOfStream){
+                        mess.Append(temp.ReadLine());
+                        mess.Append("\n");
+                    }
+                }
+            }catch(Exception e){
+                //File not found!
+                //There were no errors
+                Console.WriteLine(e.Message);
             }
             MailMessage msg = new MailMessage();
             msg.To.Add(recipientAddress); 
             msg.From = new MailAddress(fromAddress); 
             msg.Subject = string.Concat("Billing on ", DateTime.Now.ToString("MM/dd/yyyy")); 
-            msg.Body = message; 
+            msg.Body = mess.ToString(); 
 
             SmtpClient client = new SmtpClient(smtpServer, smtpPort);
             client.Credentials = cred; 
@@ -46,6 +68,20 @@ namespace PapercutSFASBilling
             client.Send(msg);
 
             return true;
+        }
+
+        public void sendMessage(string Message)
+        {
+            MailMessage msg = new MailMessage();
+            msg.To.Add(recipientAddress);
+            msg.From = new MailAddress(fromAddress);
+            msg.Subject = string.Concat("Billing on ", DateTime.Now.ToString("MM/dd/yyyy"));
+            msg.Body = Message;
+
+            SmtpClient client = new SmtpClient(smtpServer, smtpPort);
+            client.Credentials = cred;
+            client.EnableSsl = enableSsl;
+            client.Send(msg);
         }
     }
 }

@@ -27,6 +27,7 @@ SFTPPortNumber = 22
 SFTPRemoteDirectory = 
 WinSCPPath = 
 SSHHostKeyFingerprint = 
+FileProtocol =
 
 SMTPServer = smtp.mail.url
 SMTPPort = 25

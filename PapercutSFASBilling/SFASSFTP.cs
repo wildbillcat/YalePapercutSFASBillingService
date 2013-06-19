@@ -14,16 +14,33 @@ namespace PapercutSFASBilling
         string remoteDirectory;
         string executablePath;
         
-        public SFASSFTP(string SFTPUser, string SFTPKeyPath, string SFTPServerPath, int SFTPPortNumber, string WinSCPPath, string SSHHostKeyFingerprint, string RemoteDirectory)
+        //SFTP/SCP Constructor
+        public SFASSFTP(string SFTPUser, string SFTPPassword, string SFTPKeyPath, string SFTPServerPath, int SFTPPortNumber, string WinSCPPath, string SSHHostKeyFingerprint, string RemoteDirectory, Protocol FileProtocol)
         {
             sessionOptions = new SessionOptions
             {
-                Protocol = Protocol.Sftp,
+                Protocol = FileProtocol,
                 HostName = SFTPServerPath,
                 UserName = SFTPUser,
+                Password = SFTPPassword,
                 PortNumber = SFTPPortNumber,
                 SshHostKeyFingerprint = SSHHostKeyFingerprint,
                 SshPrivateKeyPath = SFTPKeyPath
+            };
+            remoteDirectory = RemoteDirectory;
+            executablePath = WinSCPPath;
+        }
+
+        //FTP Constructor
+        public SFASSFTP(string SFTPUser, string SFTPPassword, string SFTPServerPath, int SFTPPortNumber, string WinSCPPath, string RemoteDirectory, Protocol FileProtocol)
+        {
+            sessionOptions = new SessionOptions
+            {
+                Protocol = FileProtocol,
+                HostName = SFTPServerPath,
+                UserName = SFTPUser,
+                Password = SFTPPassword,
+                PortNumber = SFTPPortNumber
             };
             remoteDirectory = RemoteDirectory;
             executablePath = WinSCPPath;

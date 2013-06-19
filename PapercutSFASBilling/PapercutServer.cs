@@ -65,33 +65,6 @@ namespace PapercutSFASBilling
             return this.papercutUsers;
         }
 
-        //Redundant Method, removing temporary DB Backend
-        public bool RetrievePapercutUsers(SQLBillingServer billingServer)
-        {
-            int noUsers = this.serverProxy.GetTotalUsers();
-            int noUsers2 = noUsers;
-            int i = 0;
-            List<string> users = new List<string>();
-            while (noUsers2 > 0)
-            {
-                if ((i + 1) * 1000 < noUsers)
-                {
-                    users = this.serverProxy.ListUserAccounts(i * 1000, (i + 1) * 1000).ToList();
-                }
-                else
-                {
-                    users = this.serverProxy.ListUserAccounts(i * 1000, noUsers).ToList();
-                }
-                i++;
-                noUsers2 = noUsers2 - 1000;
-                if (!billingServer.SubmitUsersToDB(users, SQLBillingServer.MAINLIST))
-                {
-                    return false; //Failed to submit users
-                }
-            }
-            return true;
-        }
-
         public List<PapercutUser> RetrievePapercutBalances(List<string> userList)
         {
             List<PapercutUser> Users = new List<PapercutUser>();
@@ -102,6 +75,7 @@ namespace PapercutSFASBilling
             return Users;
         }
 }
+
     public struct PapercutUser
     {
         public string NetID;
