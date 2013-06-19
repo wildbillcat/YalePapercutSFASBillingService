@@ -58,7 +58,7 @@ namespace PapercutSFASBilling
 
         protected override void OnStop()
         {
-
+            tm.Stop();
         }
 
         public void TestConfig(string[] args)
