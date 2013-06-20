@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
+	<Product Id="*" Name="PaperCutSFASBilling Installer" Language="1033" Version="0.1.0.0" Manufacturer="Patrick McMorran" UpgradeCode="fbea0829-b0b9-4389-9028-a45dd287a9f9">
+		<Package InstallerVersion="200" Compressed="yes" InstallScope="perMachine" Comments="Created by Patrick McMorran. This is 'Unlicensed' Software, http://unlicense.org/" />
+    <UIRef Id="WixUI_Minimal" />
+		<MajorUpgrade DowngradeErrorMessage="A newer version of [ProductName] is already installed." />
+    <MediaTemplate EmbedCab="yes"/>
+    
+		<Feature Id="ProductFeature" Title="PapercutSFASBillingInstaller" Level="1">
+			<ComponentGroupRef Id="ProductComponents" />
+		</Feature>
+	</Product>
+
+	<Fragment>
+		<Directory Id="TARGETDIR" Name="SourceDir">
+			<Directory Id="ProgramFilesFolder">
+				<Directory Id="INSTALLFOLDER" Name="PapercutSFASBillingInstaller" />
+        
+        <Component Id="CMP_ConfigTXT"
+                 Guid="1c3b415a-daee-4932-b249-b1a60d8d2247">
+
+          <File Id="FILE_MyProgramDir_ConfigTXT"
+                Source="$(var.FilesPath)Config.txt"
+                KeyPath="yes" />
+        </Component>
+
+        <Component Id="CMP_CookComputingXmlRpcV2DLL"
+                 Guid="25043ce9-be6f-4d3d-8da9-bafa86f75ac6">
+
+          <File Id="FILE_MyProgramDir_CookComputingXmlRpcV2DLL"
+                Source="$(var.FilesPath)CookComputing.XmlRpcV2.dll"
+                KeyPath="yes" />
+        </Component>
+
+        <Component Id="CMP_PapercutSFASBillingEXE"
+                 Guid="fa555ab7-8351-491b-a892-2138dab35188">
+
+          <File Id="FILE_MyProgramDir_PapercutSFASBillingEXE"
+                Source="$(var.FilesPath)PapercutSFASBilling.exe"
+                KeyPath="yes" />
+
+          <ServiceInstall
+             Id="ServiceInstaller"
+             Type="ownProcess"
+             Vital="yes"
+             Name="PapercutSFASBilling"
+             DisplayName="SFAS Billing Papercut Interface"
+             Description="This is an application that interfaces Papercut with the Yale SFAS Vatch Billing Service."
+             Start="auto"
+             Account="LocalSystem"
+             ErrorControl="ignore"
+             Interactive="no"
+             />
+          </Component>
+
+        <Component Id="CMP_PapercutSFASBillingexeCONFIG"
+                 Guid="0c4a2b22-1890-4e61-86b0-5752fcc6aba5">
+
+          <File Id="FILE_MyProgramDir_PapercutSFASBillingexeCONFIG"
+                Source="$(var.FilesPath)PapercutSFASBilling.exe.config"
+                KeyPath="yes" />
+        </Component>
+
+        <Component Id="CMP_PapercutSFASBillingPDB"
+                 Guid="b9212383-5a6e-465b-a47f-8e0dbbf155bb">
+
+          <File Id="FILE_MyProgramDir_PapercutSFASBillingPDB"
+                Source="$(var.FilesPath)PapercutSFASBilling.pdb"
+                KeyPath="yes" />
+        </Component>
+
+        <Component Id="CMP_PapercutSFASBillingvshostEXE"
+                 Guid="3953e5d8-5d39-435e-9314-bfb7324ca0ec">
+
+          <File Id="FILE_MyProgramDir_PapercutSFASBillingvshostEXE"
+                Source="$(var.FilesPath)PapercutSFASBilling.vshost.exe"
+                KeyPath="yes" />
+        </Component>
+
+        <Component Id="CMP_PapercutSFASBillingvshostexeCONFIG"
+                Guid="d37c1140-c752-4c70-aa84-1aee080909a7">
+
+          <File Id="FILE_MyProgramDir_PapercutSFASBillingvshostexeCONFIG"
+                Source="$(var.FilesPath)PapercutSFASBilling.vshost.exe.config"
+                KeyPath="yes" />
+        </Component>
+
+        <Component Id="CMP_WinSCPDLL"
+                Guid="e294a7cf-7b39-4096-a623-1fb6499307a4">
+
+          <File Id="FILE_MyProgramDir_WinSCPDLL"
+                Source="$(var.FilesPath)WinSCP.dll"
+                KeyPath="yes" />
+        </Component>
+        
+        
+			</Directory>
+		</Directory>
+	</Fragment>
+
+	<Fragment>
+		<ComponentGroup Id="ProductComponents" Directory="INSTALLFOLDER">
+			<!-- TODO: Remove the comments around this Component element and the ComponentRef below in order to add resources to this installer. -->
+			<!-- <Component Id="ProductComponent"> -->
+				<!-- TODO: Insert files, registry keys, and other resources here. -->
+			<!-- </Component> -->
+		</ComponentGroup>
+	</Fragment>
+</Wix>
