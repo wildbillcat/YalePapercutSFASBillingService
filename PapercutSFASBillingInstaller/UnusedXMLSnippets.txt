@@ -1,0 +1,7 @@
+﻿<Component Id="CMP_PapercutSFASBillingPDB"
+                 Guid="b9212383-5a6e-465b-a47f-8e0dbbf155bb">
+
+          <File Id="FILE_MyProgramDir_PapercutSFASBillingPDB"
+                Source="$(var.FilesPath)PapercutSFASBilling.pdb"
+                KeyPath="yes" />
+        </Component>

@@ -35,7 +35,7 @@ namespace PapercutSFASBilling
         private List<string> billingsCompleted; //List of the Billing Batch IDs completed.
         private List<char[]> billingsCompletedIDs;
         private string errorPath;
-
+        string WorkingPath;
         //This constructor creates an invalid test object.
         public SQLBillingServer()
         {
@@ -51,7 +51,7 @@ namespace PapercutSFASBilling
             billingsCompletedIDs = new List<char[]>();
         }
 
-        public SQLBillingServer(string user, string pass, string path, string db, string prefix, int type, string detailCode, string userID)
+        public SQLBillingServer(string user, string pass, string path, string db, string prefix, int type, string detailCode, string userID, string WorkingPath)
         {
             sqlUser = user;
             sqlPass = pass;
@@ -61,6 +61,7 @@ namespace PapercutSFASBilling
             sqlType = type;
             batchDetailCode = detailCode;
             batchUserID = userID;
+            this.WorkingPath = WorkingPath;
             billingsCompleted = new List<string>();
             billingsCompletedIDs = new List<char[]>();
         }
@@ -205,7 +206,7 @@ namespace PapercutSFASBilling
                         double finBatchTotalBalance = 0.00;//Value Sum
 
                         //Open file
-                        using (System.IO.StreamWriter file = new System.IO.StreamWriter(string.Concat(@"BillingSubmissions\", new string(BillingID), "_transactions.txt")))
+                        using (System.IO.StreamWriter file = new System.IO.StreamWriter(string.Concat(WorkingPath, @"BillingSubmissions\", new string(BillingID), "_transactions.txt")))
                         {
                             UpdateBillingStatus(billingID, 1);
                             //Now Write all detail records
@@ -274,7 +275,7 @@ namespace PapercutSFASBilling
                          * Final Billing File Generation Section of Method 
                         **************************************************************************************************************************************************/
                         //Create Billing File
-                        using (System.IO.StreamWriter file = new System.IO.StreamWriter(string.Concat(@"BillingSubmissions\", new string(BillingID), ".txt")))
+                        using (System.IO.StreamWriter file = new System.IO.StreamWriter(string.Concat(WorkingPath, @"BillingSubmissions\", new string(BillingID), ".txt")))
                         {
                             file.Write(cBatchUserID);
                             file.Write(BillingID);
@@ -284,7 +285,7 @@ namespace PapercutSFASBilling
                             //Header Record complete
                             UpdateBillingStatus(billingID, 3);
                             //Now Open Temporary file and append it to the final Billing Submission
-                            using (System.IO.StreamReader temp = new System.IO.StreamReader(string.Concat(@"BillingSubmissions\", new string(BillingID), "_transactions.txt")))
+                            using (System.IO.StreamReader temp = new System.IO.StreamReader(string.Concat(WorkingPath, @"BillingSubmissions\", new string(BillingID), "_transactions.txt")))
                             {
                                 while (!temp.EndOfStream)
                                 {
@@ -298,7 +299,7 @@ namespace PapercutSFASBilling
                         }
                         UpdateBillingStatus(billingID, 4);
                         //Billing File Created, Delete temporary file
-                        System.IO.File.Delete(string.Concat(@"BillingSubmissions\", new string(BillingID), "_transactions.txt"));
+                        System.IO.File.Delete(string.Concat(WorkingPath, @"BillingSubmissions\", new string(BillingID), "_transactions.txt"));
                         UpdateBillingStatus(billingID, 5);
                     }
                     catch (Exception e)
@@ -316,7 +317,7 @@ namespace PapercutSFASBilling
 
                 
                 //Now Write out Errors: **Test if File exists, if so append, otherwise just write (or set to create if non existent and append?)
-                using (System.IO.StreamWriter file = new System.IO.StreamWriter(string.Concat(@"BillingErrors\", new string(cActivityDate), "_Errors.txt"), true))
+                using (System.IO.StreamWriter file = new System.IO.StreamWriter(string.Concat(WorkingPath, @"BillingErrors\", new string(cActivityDate), "_Errors.txt"), true))
                 {
                     errorPath = ((System.IO.FileStream)(file.BaseStream)).Name;
                     foreach (TransactionError error in errorLog)

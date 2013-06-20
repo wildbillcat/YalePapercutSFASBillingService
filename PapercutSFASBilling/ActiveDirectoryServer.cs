@@ -85,24 +85,6 @@ namespace PapercutSFASBilling
                 }
             }
             
-            /*
-             * Redundant Code (opting to not use the Database for the data manipulation.
-            if (!test)
-            {
-                WhiteListLength = whiteList.Count();
-                //If there is a whitelist and it's submission failed, return false.
-                if ((WhiteListLength != 0 && !billingServer.SubmitUsersToDB(whiteList, SQLBillingServer.WHITELIST)))
-                {
-                    return false;
-                }
-                BlackListLength = blackList.Count();
-                //If there is a blacklist and it's submission failed, return false.
-                if (BlackListLength != 0 && !billingServer.SubmitUsersToDB(blackList, SQLBillingServer.BLACKLIST))
-                {
-                    return false;
-                }
-            }
-             */
             WhiteListLength = whiteList.Count();
             BlackListLength = blackList.Count();
             blackList = blackList.Distinct<string>().ToList<string>();

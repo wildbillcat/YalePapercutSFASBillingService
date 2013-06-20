@@ -32,7 +32,8 @@
     <Pedantic>False</Pedantic>
     <TreatWarningsAsErrors>False</TreatWarningsAsErrors>
     <VerboseOutput>False</VerboseOutput>
-    <DefineConstants>Debug;FilePath=..\PapercutSFASBilling\bin\x64\Release</DefineConstants>
+    <DefineConstants>Debug;FilesPath=..\PapercutSFASBilling\bin\x64\Release\</DefineConstants>
+    <SuppressPdbOutput>True</SuppressPdbOutput>
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="Product.wxs" />
@@ -42,6 +43,9 @@
       <HintPath>$(WixExtDir)\WixUIExtension.dll</HintPath>
       <Name>WixUIExtension</Name>
     </WixExtension>
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="UnusedXMLSnippets.txt" />
   </ItemGroup>
   <Import Project="$(WixTargetsPath)" />
   <!--

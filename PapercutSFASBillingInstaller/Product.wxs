@@ -6,14 +6,19 @@
 		<MajorUpgrade DowngradeErrorMessage="A newer version of [ProductName] is already installed." />
     <MediaTemplate EmbedCab="yes"/>
     
-		<Feature Id="ProductFeature" Title="PapercutSFASBillingInstaller" Level="1">
-			<ComponentGroupRef Id="ProductComponents" />
+		<Feature Id="PaperCutSFASService" Title="PapercutSFASBillingInstaller" Level="1">
+      <ComponentRef Id="CMP_ConfigTXT" />
+      <ComponentRef Id="CMP_CookComputingXmlRpcV2DLL" />
+      <ComponentRef Id="CMP_PapercutSFASBillingEXE" />
+      <ComponentRef Id="CMP_PapercutSFASBillingexeCONFIG" />
+      <ComponentRef Id="CMP_ReadMeTXT" />
+      <ComponentRef Id="CMP_PapercutSFASBillingvshostEXE" />
+      <ComponentRef Id="CMP_PapercutSFASBillingvshostexeCONFIG" />
+      <ComponentRef Id="CMP_WinSCPDLL" />
 		</Feature>
-	</Product>
 
-	<Fragment>
 		<Directory Id="TARGETDIR" Name="SourceDir">
-			<Directory Id="ProgramFilesFolder">
+			<Directory Id="ProgramFiles64Folder">
 				<Directory Id="INSTALLFOLDER" Name="PapercutSFASBillingInstaller" />
         
         <Component Id="CMP_ConfigTXT"
@@ -61,11 +66,11 @@
                 KeyPath="yes" />
         </Component>
 
-        <Component Id="CMP_PapercutSFASBillingPDB"
+        <Component Id="CMP_ReadMeTXT"
                  Guid="b9212383-5a6e-465b-a47f-8e0dbbf155bb">
 
-          <File Id="FILE_MyProgramDir_PapercutSFASBillingPDB"
-                Source="$(var.FilesPath)PapercutSFASBilling.pdb"
+          <File Id="FILE_MyProgramDir_ReadMeTXT"
+                Source="$(var.FilesPath)ReadMe.txt"
                 KeyPath="yes" />
         </Component>
 
@@ -96,14 +101,6 @@
         
 			</Directory>
 		</Directory>
-	</Fragment>
 
-	<Fragment>
-		<ComponentGroup Id="ProductComponents" Directory="INSTALLFOLDER">
-			<!-- TODO: Remove the comments around this Component element and the ComponentRef below in order to add resources to this installer. -->
-			<!-- <Component Id="ProductComponent"> -->
-				<!-- TODO: Insert files, registry keys, and other resources here. -->
-			<!-- </Component> -->
-		</ComponentGroup>
-	</Fragment>
+  </Product>
 </Wix>

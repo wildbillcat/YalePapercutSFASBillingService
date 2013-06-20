@@ -34,14 +34,21 @@ namespace PapercutSFASBilling
 
         protected override void OnStart(string[] args)
         {
-            LoadConfig(args);
-            tm = new Timer();
-            tm.Elapsed += new ElapsedEventHandler(OnTimedEvent);
-            tm.Interval = 6000; // 6 Seconds
-            tm.Start();
-            //tm.Interval = 60000; // 1 Minutes
-            //tm.Interval = 300000; // 5 Minutes
-            //tm.Interval = 1800000; // 30 Minutes
+            if (args.Length > 1)
+            {
+                LoadConfig(args);
+                tm = new Timer();
+                tm.Elapsed += new ElapsedEventHandler(OnTimedEvent);
+                tm.Interval = 6000; // 6 Seconds
+                tm.Start();
+                //tm.Interval = 60000; // 1 Minutes
+                //tm.Interval = 300000; // 5 Minutes
+                //tm.Interval = 1800000; // 30 Minutes
+            }
+            else
+            {
+                //Service not yet configured.
+            }
         }
 
         private void OnTimedEvent(object source, ElapsedEventArgs e)
@@ -360,7 +367,7 @@ namespace PapercutSFASBilling
             ///// pretending that the config file was done correctly!
 
             this.papercutServer = new PaperCutServer(paperCutPath, apiKey, paperCutPort);
-            this.billingServer = new SQLBillingServer(sqlUser, sqlPass, sqlPath, sqlDatabase, sqlPrefix, sqlType, batchDetailCode, batchUserID);
+            this.billingServer = new SQLBillingServer(sqlUser, sqlPass, sqlPath, sqlDatabase, sqlPrefix, sqlType, batchDetailCode, batchUserID, WorkingPath);
             this.oracleServer = new OracleServer(oracleUser, oraclePass, oraclePath);
             this.activeDirectoryServer = new ActiveDirectoryServer(whiteList, blackList);
             if (FileProtocol.Equals(Protocol.Ftp))
