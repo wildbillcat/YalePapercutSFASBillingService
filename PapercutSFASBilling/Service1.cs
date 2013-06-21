@@ -107,6 +107,7 @@ namespace PapercutSFASBilling
             //parse args
             for (int i = 0; i < args.Length; i++)
             {
+                args[i] = args[i].Replace("\"", "");//Remove all quotes if there are any
                 if (args[i].Equals("/p") || args[i].Equals("-p"))
                 {
                     Console.WriteLine("Array space" + i + ": " + args[i]);

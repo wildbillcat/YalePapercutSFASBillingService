@@ -13,7 +13,7 @@ namespace PapercutSFASBillingTests
         {
             List<char[]> billID = new List<char[]>();
             billID.Add("00001".ToCharArray());
-            SQLBillingServer billingServer = new SQLBillingServer(TestingParameters.SQLBillingServeruser, TestingParameters.SQLBillingServerpass, TestingParameters.SQLBillingServerpath, TestingParameters.SQLBillingServerdb, TestingParameters.SQLBillingServerprefix, TestingParameters.SQLBillingServertype, TestingParameters.SQLBillingServerdetailCode, TestingParameters.SQLBillingServeruserID);
+            SQLBillingServer billingServer = new SQLBillingServer(TestingParameters.SQLBillingServeruser, TestingParameters.SQLBillingServerpass, TestingParameters.SQLBillingServerpath, TestingParameters.SQLBillingServerdb, TestingParameters.SQLBillingServerprefix, TestingParameters.SQLBillingServertype, TestingParameters.SQLBillingServerdetailCode, TestingParameters.SQLBillingServeruserID, TestingParameters.WorkingPath);
             EmailServer mailMan = new EmailServer(TestingParameters.fromAddress, TestingParameters.recipientAddress, TestingParameters.smtpServer, TestingParameters.smtpPort, TestingParameters.sslEnable, TestingParameters.smtpUser, TestingParameters.smtpPassword);
             mailMan.SendSummaryEmail(billingServer, billID);
         }
