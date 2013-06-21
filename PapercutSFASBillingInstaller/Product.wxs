@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
-	<Product Id="*" Name="PaperCutSFASBilling Installer" Language="1033" Version="0.1.0.0" Manufacturer="Patrick McMorran" UpgradeCode="fbea0829-b0b9-4389-9028-a45dd287a9f9">
+	<Product Id="*" Name="PaperCutSFASBilling" Language="1033" Version="0.1.0.0" Manufacturer="Patrick McMorran" UpgradeCode="fbea0829-b0b9-4389-9028-a45dd287a9f9">
 		<Package InstallerVersion="200" Compressed="yes" InstallScope="perMachine" Comments="Created by Patrick McMorran. This is 'Unlicensed' Software, http://unlicense.org/" />
     <UIRef Id="WixUI_Minimal" />
 		<MajorUpgrade DowngradeErrorMessage="A newer version of [ProductName] is already installed." />
     <MediaTemplate EmbedCab="yes"/>
     
-		<Feature Id="PaperCutSFASService" Title="PapercutSFASBillingInstaller" Level="1">
+		<Feature Id="PaperCutSFASService" Title="PapercutSFASBilling" Level="1">
       <ComponentRef Id="CMP_ConfigTXT" />
       <ComponentRef Id="CMP_CookComputingXmlRpcV2DLL" />
       <ComponentRef Id="CMP_PapercutSFASBillingEXE" />
@@ -19,7 +19,7 @@
 
 		<Directory Id="TARGETDIR" Name="SourceDir">
 			<Directory Id="ProgramFiles64Folder">
-				<Directory Id="INSTALLFOLDER" Name="PapercutSFASBillingInstaller" />
+				<Directory Id="INSTALLFOLDER" Name="PapercutSFASBilling">
         
         <Component Id="CMP_ConfigTXT"
                  Guid="1c3b415a-daee-4932-b249-b1a60d8d2247">
@@ -43,19 +43,25 @@
           <File Id="FILE_MyProgramDir_PapercutSFASBillingEXE"
                 Source="$(var.FilesPath)PapercutSFASBilling.exe"
                 KeyPath="yes" />
-
+          <ServiceInstall
+         Id="InstallWindowsService1"
+         Name="testsvc"
+         DisplayName="Test Service"
+         Start="auto"
+         ErrorControl="normal"
+         Type="ownProcess" />
+          
           <ServiceInstall
              Id="ServiceInstaller"
              Type="ownProcess"
-             Vital="yes"
              Name="PapercutSFASBilling"
              DisplayName="SFAS Billing Papercut Interface"
              Description="This is an application that interfaces Papercut with the Yale SFAS Vatch Billing Service."
              Start="auto"
              Account="LocalSystem"
-             ErrorControl="ignore"
-             Interactive="no"
+             ErrorControl="normal"
              />
+          <ServiceControl Id="StartService" Start="install" Stop="both" Remove="uninstall" Name="PapercutSFASBilling" Wait="yes" />
           </Component>
 
         <Component Id="CMP_PapercutSFASBillingexeCONFIG"
@@ -97,8 +103,8 @@
                 Source="$(var.FilesPath)WinSCP.dll"
                 KeyPath="yes" />
         </Component>
-        
-        
+
+      </Directory>
 			</Directory>
 		</Directory>
 

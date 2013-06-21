@@ -6,7 +6,7 @@
     <ProductVersion>3.7</ProductVersion>
     <ProjectGuid>3b380f99-96b9-4b3b-95ca-06aaf7e36248</ProjectGuid>
     <SchemaVersion>2.0</SchemaVersion>
-    <OutputName>PapercutSFASBillingInstaller</OutputName>
+    <OutputName>PapercutSFASBilling</OutputName>
     <OutputType>Package</OutputType>
     <WixTargetsPath Condition=" '$(WixTargetsPath)' == '' AND '$(MSBuildExtensionsPath32)' != '' ">$(MSBuildExtensionsPath32)\Microsoft\WiX\v3.x\Wix.targets</WixTargetsPath>
     <WixTargetsPath Condition=" '$(WixTargetsPath)' == '' ">$(MSBuildExtensionsPath)\Microsoft\WiX\v3.x\Wix.targets</WixTargetsPath>
@@ -34,6 +34,7 @@
     <VerboseOutput>False</VerboseOutput>
     <DefineConstants>Debug;FilesPath=..\PapercutSFASBilling\bin\x64\Release\</DefineConstants>
     <SuppressPdbOutput>True</SuppressPdbOutput>
+    <CompilerAdditionalOptions>-arch x64</CompilerAdditionalOptions>
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="Product.wxs" />

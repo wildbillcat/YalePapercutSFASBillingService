@@ -25,15 +25,24 @@ namespace PapercutSFASBilling
         private string[] arguments;
         private Timer tm;
         DateTime LastBilling;
-        bool SendBillingSummary = true;
+        bool SendBillingSummary;
+        
 
         public Service1()
         {
             InitializeComponent();
+            if (!System.Diagnostics.EventLog.SourceExists("PapercutSFASBilling"))
+            {
+                System.Diagnostics.EventLog.CreateEventSource(
+                    "PapercutSFASBilling", "PapercutSFASBillingLog");
+            }
+            eventLog1.Source = "PapercutSFASBilling";
+            eventLog1.Log = "PapercutSFASBillingLog";
         }
 
         protected override void OnStart(string[] args)
         {
+            
             if (args.Length > 1)
             {
                 LoadConfig(args);
@@ -49,6 +58,7 @@ namespace PapercutSFASBilling
             {
                 //Service not yet configured.
             }
+             
         }
 
         private void OnTimedEvent(object source, ElapsedEventArgs e)
@@ -65,7 +75,10 @@ namespace PapercutSFASBilling
 
         protected override void OnStop()
         {
-            tm.Stop();
+            if (!tm.Equals(null))
+            {
+                tm.Stop();
+            }
         }
 
         public void TestConfig(string[] args)
@@ -354,6 +367,10 @@ namespace PapercutSFASBilling
                     else if (setting.Equals("EmailTo"))
                     {
                         EmailTo = value;
+                    }
+                    else if (setting.Equals("SendBillingSummary"))
+                    {
+                        SendBillingSummary = bool.Parse(value);
                     }
                     else
                     {
