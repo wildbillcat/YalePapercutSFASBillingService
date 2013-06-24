@@ -5,7 +5,7 @@
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <ProjectGuid>{9B8C9DC7-59D6-4773-AC89-DE383D7676B8}</ProjectGuid>
-    <OutputType>WinExe</OutputType>
+    <OutputType>Exe</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>PapercutSFASBilling</RootNamespace>
     <AssemblyName>PapercutSFASBilling</AssemblyName>
@@ -124,6 +124,9 @@
     <None Include="Database.vsd" />
   </ItemGroup>
   <ItemGroup>
+    <Content Include="BillingDirectory.txt">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
     <Content Include="Config.txt">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>

@@ -15,6 +15,7 @@
       <ComponentRef Id="CMP_PapercutSFASBillingvshostEXE" />
       <ComponentRef Id="CMP_PapercutSFASBillingvshostexeCONFIG" />
       <ComponentRef Id="CMP_WinSCPDLL" />
+      <ComponentRef Id="CMP_BillingDirectoryTXT" />
 		</Feature>
 
 		<Directory Id="TARGETDIR" Name="SourceDir">
@@ -103,6 +104,13 @@
                 Source="$(var.FilesPath)WinSCP.dll"
                 KeyPath="yes" />
         </Component>
+          <Component Id="CMP_BillingDirectoryTXT"
+                Guid="e294a7cf-7b39-4096-a623-1fb6499307a5">
+
+            <File Id="FILE_MyProgramDir_BillingDirectoryTXT"
+                  Source="$(var.FilesPath)BillingDirectory.txt"
+                  KeyPath="yes" />
+          </Component>
 
       </Directory>
 			</Directory>

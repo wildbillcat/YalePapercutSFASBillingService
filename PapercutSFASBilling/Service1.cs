@@ -15,22 +15,28 @@ namespace PapercutSFASBilling
     public partial class Service1 : ServiceBase
     {
 
-        private PaperCutServer papercutServer;
-        private SQLBillingServer billingServer;
-        private OracleServer oracleServer;
-        private ActiveDirectoryServer activeDirectoryServer;
-        private SFASSFTP FTPServer;
-        private EmailServer emailServer;
-        private string WorkingPath;
-        private string[] arguments;
-        private Timer tm;
-        DateTime LastBilling;
-        bool SendBillingSummary;
+        protected PaperCutServer papercutServer;
+        protected SQLBillingServer billingServer;
+        protected OracleServer oracleServer;
+        protected ActiveDirectoryServer activeDirectoryServer;
+        protected SFASSFTP FTPServer;
+        protected EmailServer emailServer;
+        protected string WorkingPath;
+        protected string[] arguments;
+        protected Timer tm;
+        protected DateTime LastBilling;
+        protected bool SendBillingSummary;
+        static bool Vconsole = false;
         
 
         public Service1()
         {
             InitializeComponent();
+            using (System.IO.StreamWriter Op = new System.IO.StreamWriter("C:\\debug.txt"))
+            {
+                Op.WriteLine("Started!");
+            }
+            /*
             if (!System.Diagnostics.EventLog.SourceExists("PapercutSFASBilling"))
             {
                 System.Diagnostics.EventLog.CreateEventSource(
@@ -38,88 +44,78 @@ namespace PapercutSFASBilling
             }
             eventLog1.Source = "PapercutSFASBilling";
             eventLog1.Log = "PapercutSFASBillingLog";
+             */
         }
 
         protected override void OnStart(string[] args)
         {
-            
-            if (args.Length > 1)
-            {
-                LoadConfig(args);
-                tm = new Timer();
+                //LoadConfig(args); //Loading the configuration file takes too long, causing the service startup to fail.
+                LastBilling = DateTime.Now.AddDays(-1);
+                tm = new Timer(1000);
                 tm.Elapsed += new ElapsedEventHandler(OnTimedEvent);
-                tm.Interval = 6000; // 6 Seconds
+                tm.Enabled = true;
+                tm.AutoReset = true;
+                //tm.Interval = 6000; // 6 Seconds
                 tm.Start();
+                GC.KeepAlive(tm);
                 //tm.Interval = 60000; // 1 Minutes
                 //tm.Interval = 300000; // 5 Minutes
                 //tm.Interval = 1800000; // 30 Minutes
-            }
-            else
-            {
-                //Service not yet configured.
-            }
-             
+                using (System.IO.StreamWriter Op = new System.IO.StreamWriter("C:\\debug.txt", true))
+                {
+                    Op.WriteLine("Started!");
+                }
+                if (Vconsole)
+                {
+                    Console.WriteLine("On Start Ran!");
+                }
         }
 
-        private void OnTimedEvent(object source, ElapsedEventArgs e)
+        public static void Main(string[] args)
         {
+            Vconsole = true;
+            Service1 S = new Service1();
+            S.TestRun();
+            Console.ReadLine();
+        }
+        public void TestRun()
+        {
+            this.LoadConfig(null);
+            this.ProcessBilling();
+        }
+
+        protected void OnTimedEvent(object source, ElapsedEventArgs e)
+        {
+            using (System.IO.StreamWriter Op = new System.IO.StreamWriter("C:\\debug.txt", true))
+            {
+                Op.WriteLine(string.Concat("Timer Ran! last Billing: ",this.LastBilling.ToString()));
+            
             //Each time the timer fires, check to see if it is the next day for billing.
             if (DateTime.Now.Day != LastBilling.Day)
             {
+                Op.WriteLine(string.Concat("Last Billing not today! last Billing: ", this.LastBilling.ToString()));
                 tm.Stop();
                 this.ProcessBilling();
                 LastBilling = billingServer.GetLastBilling();
                 tm.Start();
             }
+            }
         }
 
         protected override void OnStop()
         {
-            if (!tm.Equals(null))
-            {
-                tm.Stop();
-            }
-        }
-
-        public void TestConfig(string[] args)
-        {
-            LoadConfig(args);
-        }
-
-        public void TestBilling(string[] args)
-        {
-            arguments = args;
-            ProcessBilling();
+             tm.Enabled = false;
+             tm.Stop();
         }
             
         private void LoadConfig(string[] args)
         {
-            //Test for Billing and Error Folders
-            if (!System.IO.Directory.Exists("BillingErrors"))
-            {
-                System.IO.Directory.CreateDirectory("BillingErrors");
-            }
-            if (!System.IO.Directory.Exists("BillingSubmissions"))
-            {
-                System.IO.Directory.CreateDirectory("BillingSubmissions");
-            }
             bool test = false;
-            //parse args
-            for (int i = 0; i < args.Length; i++)
-            {
-                args[i] = args[i].Replace("\"", "");//Remove all quotes if there are any
-                if (args[i].Equals("/p") || args[i].Equals("-p"))
-                {
-                    Console.WriteLine("Array space" + i + ": " + args[i]);
-                    i++;
-                    WorkingPath = args[i];
-                }
-                else if (args[i].Equals("test"))
-                {
-                    test = true;
-                }
-                
+            //Read Text file that points service at the Billing Directory
+            using(System.IO.StreamReader dirPath = new System.IO.StreamReader("BillingDirectory.txt")){
+                WorkingPath = dirPath.ReadLine();
             }
+            //Parse Path
             if (!WorkingPath[WorkingPath.Length - 1].Equals('\\'))
             {
                 if (test)
@@ -131,6 +127,15 @@ namespace PapercutSFASBilling
                 {
                     Console.WriteLine(string.Concat("Appended Path: ", WorkingPath));
                 }
+            }
+            //Test for Billing and Error Folders
+            if (!System.IO.Directory.Exists(string.Concat(WorkingPath, "BillingErrors")))
+            {
+                System.IO.Directory.CreateDirectory(string.Concat(WorkingPath, "BillingErrors"));
+            }
+            if (!System.IO.Directory.Exists(string.Concat(WorkingPath, "BillingSubmissions")))
+            {
+                System.IO.Directory.CreateDirectory(string.Concat(WorkingPath, "BillingSubmissions"));
             }
 
             int counter = 0;
