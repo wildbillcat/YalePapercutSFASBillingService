@@ -30,6 +30,7 @@ namespace PapercutSFASBilling
 
         private string batchDetailCode;
         private string batchUserID;
+        private string batchFilePrefix;
 
         private List<PapercutUser> billableUsers;
         private List<string> billingsCompleted; //List of the Billing Batch IDs completed.
@@ -47,11 +48,12 @@ namespace PapercutSFASBilling
             sqlType = 0;
             batchDetailCode = "test";
             batchUserID = "test";
+            batchFilePrefix = "test";
             billingsCompleted = new List<string>();
             billingsCompletedIDs = new List<char[]>();
         }
 
-        public SQLBillingServer(string user, string pass, string path, string db, string prefix, int type, string detailCode, string userID, string WorkingPath)
+        public SQLBillingServer(string user, string pass, string path, string db, string prefix, int type, string detailCode, string userID, string WorkingPath, string batchFilePrefix)
         {
             sqlUser = user;
             sqlPass = pass;
@@ -62,6 +64,7 @@ namespace PapercutSFASBilling
             batchDetailCode = detailCode;
             batchUserID = userID;
             this.WorkingPath = WorkingPath;
+            this.batchFilePrefix = batchFilePrefix;
             billingsCompleted = new List<string>();
             billingsCompletedIDs = new List<char[]>();
         }
@@ -206,7 +209,7 @@ namespace PapercutSFASBilling
                         double finBatchTotalBalance = 0.00;//Value Sum
 
                         //Open file
-                        using (System.IO.StreamWriter file = new System.IO.StreamWriter(string.Concat(WorkingPath, @"BillingSubmissions\", new string(BillingID), "_transactions.txt")))
+                        using (System.IO.StreamWriter file = new System.IO.StreamWriter(string.Concat(WorkingPath, @"BillingSubmissions\arbatch.", batchFilePrefix, ".", new string(BillingID), "_transactions.txt")))
                         {
                             UpdateBillingStatus(billingID, 1);
                             //Now Write all detail records
@@ -269,13 +272,13 @@ namespace PapercutSFASBilling
                         }//Complete writing out transactions
                         UpdateBillingStatus(billingID, 2);
                         char[] finalAbsBilling = BillingUtility.FormatAmount(finTotalBilling);
-                        this.UpdateBillingID(billingID, 0, finalAbsBilling, finBatchTotalBalance);
+                        this.UpdateBillingID(billingID, finalAbsBilling, finBatchTotalBalance);
                         //Update Billing Entry with corrected information
                         /**************************************************************************************************************************************************
                          * Final Billing File Generation Section of Method 
                         **************************************************************************************************************************************************/
                         //Create Billing File
-                        using (System.IO.StreamWriter file = new System.IO.StreamWriter(string.Concat(WorkingPath, @"BillingSubmissions\", new string(BillingID), ".txt")))
+                        using (System.IO.StreamWriter file = new System.IO.StreamWriter(string.Concat(WorkingPath, @"BillingSubmissions\arbatch.", batchFilePrefix, ".", new string(BillingID), ".dat")))
                         {
                             file.Write(cBatchUserID);
                             file.Write(BillingID);
@@ -285,7 +288,7 @@ namespace PapercutSFASBilling
                             //Header Record complete
                             UpdateBillingStatus(billingID, 3);
                             //Now Open Temporary file and append it to the final Billing Submission
-                            using (System.IO.StreamReader temp = new System.IO.StreamReader(string.Concat(WorkingPath, @"BillingSubmissions\", new string(BillingID), "_transactions.txt")))
+                            using (System.IO.StreamReader temp = new System.IO.StreamReader(string.Concat(WorkingPath, @"BillingSubmissions\arbatch.", batchFilePrefix, ".", new string(BillingID), "_transactions.txt")))
                             {
                                 while (!temp.EndOfStream)
                                 {
@@ -299,7 +302,7 @@ namespace PapercutSFASBilling
                         }
                         UpdateBillingStatus(billingID, 4);
                         //Billing File Created, Delete temporary file
-                        System.IO.File.Delete(string.Concat(WorkingPath, @"BillingSubmissions\", new string(BillingID), "_transactions.txt"));
+                        System.IO.File.Delete(string.Concat(WorkingPath, @"BillingSubmissions\arbatch.", batchFilePrefix, ".", new string(BillingID), "_transactions.txt"));
                         UpdateBillingStatus(billingID, 5);
                     }
                     catch (Exception e)
@@ -355,23 +358,22 @@ namespace PapercutSFASBilling
                 generateBilling.Parameters.AddWithValue("@BatchTotal", BatchTotal);
                 generateBilling.Parameters.AddWithValue("@BatchTotalBalance", BatchTotalBalance);
                 generateBilling.Parameters.AddWithValue("@BatchProcessingDate", DateTime.Now);
-                generateBilling.ExecuteNonQuery();
+                //generateBilling.ExecuteNonQuery();
                 ID = int.Parse(generateBilling.ExecuteScalar().ToString());
                 conn.Close();
             }
             return ID;
         }
 
-        public void UpdateBillingID(int batchID, int batchStatus, char[] batchTotal, double batchTotalBalance)
+        public void UpdateBillingID(int batchID, char[] batchTotal, double batchTotalBalance)
         {
             try
             {
-                string UpdateBilling = string.Concat("UPDATE ", this.sqlPrefix, "Billings SET BatchStatus = @BatchStatus, BatchTotal = @BatchTotal, BatchTotalBalance = @BatchTotalBalance WHERE BatchID = @BatchID");
+                string UpdateBilling = string.Concat("UPDATE ", this.sqlPrefix, "Billings SET BatchTotal = @BatchTotal, BatchTotalBalance = @BatchTotalBalance WHERE BatchID = @BatchID");
                 using (SqlConnection conn = new SqlConnection("Server=" + sqlPath + "; Database=" + sqlDatabase + "; User ID=" + sqlUser + "; Password=" + sqlPass + ";"))
                 {
                     conn.Open();
                     SqlCommand updateBilling = new SqlCommand(UpdateBilling, conn);
-                    updateBilling.Parameters.AddWithValue("@BatchStatus", batchStatus);
                     updateBilling.Parameters.AddWithValue("@BatchTotal", batchTotal);
                     updateBilling.Parameters.AddWithValue("@BatchTotalBalance", batchTotalBalance);
                     updateBilling.Parameters.AddWithValue("@BatchID", batchID);

@@ -1,1 +1,1 @@
-﻿C:\Path\To\Billing\Directory
+﻿C:\Path\To\Billing\Dir

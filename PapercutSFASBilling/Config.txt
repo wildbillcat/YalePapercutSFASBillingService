@@ -18,6 +18,7 @@ ActiveDirectoryBlackList = Active Directory Group A, Active Directory Group B
 
 BatchUserID = S$USER
 BatchDetailCode = TEST
+BatchFilePrefix = arc
 
 SFTPUser = username
 SFTPPassword = 

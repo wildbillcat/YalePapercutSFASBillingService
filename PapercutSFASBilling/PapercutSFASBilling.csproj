@@ -69,6 +69,7 @@
     <CodeAnalysisRuleSet>AllRules.ruleset</CodeAnalysisRuleSet>
     <Prefer32Bit>true</Prefer32Bit>
     <RunCodeAnalysis>false</RunCodeAnalysis>
+    <DefineConstants>TRACE</DefineConstants>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="CookComputing.XmlRpcV2">
@@ -93,6 +94,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="ActiveDirectoryServer.cs" />
+    <Compile Include="BillingManager.cs" />
     <Compile Include="EmailServer.cs" />
     <Compile Include="ProjectInstaller.cs">
       <SubType>Component</SubType>

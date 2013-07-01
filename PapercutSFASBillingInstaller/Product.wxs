@@ -12,8 +12,6 @@
       <ComponentRef Id="CMP_PapercutSFASBillingEXE" />
       <ComponentRef Id="CMP_PapercutSFASBillingexeCONFIG" />
       <ComponentRef Id="CMP_ReadMeTXT" />
-      <ComponentRef Id="CMP_PapercutSFASBillingvshostEXE" />
-      <ComponentRef Id="CMP_PapercutSFASBillingvshostexeCONFIG" />
       <ComponentRef Id="CMP_WinSCPDLL" />
       <ComponentRef Id="CMP_BillingDirectoryTXT" />
 		</Feature>
@@ -81,23 +79,7 @@
                 KeyPath="yes" />
         </Component>
 
-        <Component Id="CMP_PapercutSFASBillingvshostEXE"
-                 Guid="3953e5d8-5d39-435e-9314-bfb7324ca0ec">
-
-          <File Id="FILE_MyProgramDir_PapercutSFASBillingvshostEXE"
-                Source="$(var.FilesPath)PapercutSFASBilling.vshost.exe"
-                KeyPath="yes" />
-        </Component>
-
-        <Component Id="CMP_PapercutSFASBillingvshostexeCONFIG"
-                Guid="d37c1140-c752-4c70-aa84-1aee080909a7">
-
-          <File Id="FILE_MyProgramDir_PapercutSFASBillingvshostexeCONFIG"
-                Source="$(var.FilesPath)PapercutSFASBilling.vshost.exe.config"
-                KeyPath="yes" />
-        </Component>
-
-        <Component Id="CMP_WinSCPDLL"
+          <Component Id="CMP_WinSCPDLL"
                 Guid="e294a7cf-7b39-4096-a623-1fb6499307a4">
 
           <File Id="FILE_MyProgramDir_WinSCPDLL"
