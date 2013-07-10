@@ -358,7 +358,6 @@ namespace PapercutSFASBilling
                 generateBilling.Parameters.AddWithValue("@BatchTotal", BatchTotal);
                 generateBilling.Parameters.AddWithValue("@BatchTotalBalance", BatchTotalBalance);
                 generateBilling.Parameters.AddWithValue("@BatchProcessingDate", DateTime.Now);
-                //generateBilling.ExecuteNonQuery();
                 ID = int.Parse(generateBilling.ExecuteScalar().ToString());
                 conn.Close();
             }
@@ -490,13 +489,12 @@ namespace PapercutSFASBilling
             }
         }
 
-        private static class BillingUtility
+        public static class BillingUtility
         {
             public static char[] FormatAmount(double amount)
                 {
-                    string amount2 = (Math.Abs(amount*100)).ToString("0.00");
-                    string cAmount = amount2.Substring(0, amount2.IndexOf('.')); //Find the Absolute Value, then convert it to a string
-                    cAmount.Remove(cAmount.Length - 3, 1); //Removes the "." from the number
+                    string amount2 = (Math.Abs(amount * 100)).ToString("0.00"); //Find the Absolute Value, then convert it to a string
+                    string cAmount = amount2.Substring(0, amount2.IndexOf('.')); //Removes the "." from the number
                     if(cAmount.Length>9)//If the length is greater than 10 characters, then the bill is too much to be billed in a single batch transaction
                     {
                         throw new ValidationException(string.Concat("Amount user is to be billed is too great for the system. Amount: ", cAmount.ToString()));

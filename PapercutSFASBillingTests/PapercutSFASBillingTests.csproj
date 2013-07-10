@@ -101,6 +101,7 @@
     <Compile Include="PaperCutServerTests.cs" />
     <Compile Include="SFASSFTPTests.cs" />
     <Compile Include="EmailServerTests.cs" />
+    <Compile Include="BillingUtilityTests.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="BillingTestClassDiagram.cd" />
