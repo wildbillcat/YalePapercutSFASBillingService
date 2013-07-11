@@ -166,9 +166,12 @@ namespace PapercutSFASBilling
                                 }
                                 char[] userPID = BillingUtility.ValidPID(oracleInfo[0]);
                                 char[] userSPRIDENID = BillingUtility.ValidSPRIDEN_ID(oracleInfo[1]);
-                                transactionLedger.Add(new BillingTransaction(amount, billingAmount, creditIndicator, user.NetID, userPID, userSPRIDENID));
-                                totalBilling = totalBilling + Math.Abs(billingAmount);//Absolute Sum
-                                batchTotalBalance = batchTotalBalance + billingAmount;//Value Sum
+                                if (Math.Abs(billingAmount) >= .01)//Due to Fractions of Cents, if the absolute value of the transaction isn't greater than a penny then it can't be billed.
+                                {
+                                    transactionLedger.Add(new BillingTransaction(amount, billingAmount, creditIndicator, user.NetID, userPID, userSPRIDENID));
+                                    totalBilling = totalBilling + Math.Abs(billingAmount);//Absolute Sum
+                                    batchTotalBalance = batchTotalBalance + billingAmount;//Value Sum
+                                }
                             }
                             catch (Exception e) //An exception was thrown on the 
                             {
