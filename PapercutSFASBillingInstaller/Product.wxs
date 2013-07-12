@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
-	<Product Id="2370add8-b1e2-4280-8fe5-04ae860958b7" Name="PaperCutSFASBilling" Language="1033" Version="0.1.1.0" Manufacturer="Patrick McMorran" UpgradeCode="fbea0829-b0b9-4389-9028-a45dd287a9f9">
+	<Product Id="2370add8-b1e2-4280-8fe5-04ae860958b7" Name="PaperCutSFASBilling" Language="1033" Version="0.1.2.0" Manufacturer="Patrick McMorran" UpgradeCode="fbea0829-b0b9-4389-9028-a45dd287a9f9">
 		<Package InstallerVersion="200" Compressed="yes" InstallScope="perMachine" Comments="Created by Patrick McMorran. This is 'Unlicensed' Software, http://unlicense.org/" />
     <UIRef Id="WixUI_Minimal" />
 		<MajorUpgrade DowngradeErrorMessage="A newer version of [ProductName] is already installed." />
