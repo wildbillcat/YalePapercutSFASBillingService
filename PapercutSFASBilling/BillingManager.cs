@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Threading;
 using System.Timers;
 using WinSCP;
 
@@ -17,16 +18,18 @@ namespace PapercutSFASBilling
         protected SFASSFTP FTPServer;
         protected EmailServer emailServer;
         protected string WorkingPath;
-        protected Timer tm;
+        protected System.Timers.Timer tm;
         protected DateTime LastBilling;
         protected bool SendBillingSummary;
         public bool validConfig;
         public bool directoryGiven;
+        public static Mutex BillingInProcess = new Mutex(); //You have to kill 
+
 
         public BillingManager()
         {
             LastBilling = DateTime.Now.AddDays(-1);
-            tm = new Timer(6000);
+            tm = new System.Timers.Timer(6000);
             tm.Elapsed += new ElapsedEventHandler(OnTimedEvent);
             tm.Enabled = true;
             tm.AutoReset = true;
@@ -57,6 +60,7 @@ namespace PapercutSFASBilling
 
         protected void OnTimedEvent(object source, ElapsedEventArgs e)
         {
+            BillingInProcess.WaitOne();
             Console.WriteLine("Timer Fired");
 
             if (DateTime.Now.Day != LastBilling.Day)
@@ -76,6 +80,7 @@ namespace PapercutSFASBilling
                 tm.Enabled = true;
                 tm.Start();
             }
+            BillingInProcess.ReleaseMutex();
         }
 
         public void EndBilling()
